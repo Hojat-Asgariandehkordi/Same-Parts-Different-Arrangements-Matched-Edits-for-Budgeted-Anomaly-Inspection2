@@ -1,0 +1,53 @@
+% CVPR 2027 Paper Template; see https://github.com/cvpr-org/author-kit
+
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+%%%%%%%%% PAPER TYPE  - PLEASE UPDATE FOR FINAL VERSION
+% \usepackage{cvpr}              % To produce the CAMERA-READY version
+\usepackage[review]{cvpr}      % To produce the REVIEW version
+% \usepackage[pagenumbers]{cvpr} % To force page numbers, e.g. for an arXiv version
+
+% Import additional packages in the preamble file, before hyperref
+\input{preamble}
+
+\definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
+\usepackage[pagebackref,breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
+
+\def\confName{CVPR}
+\def\confYear{2027}
+
+\input{tables/numbers}
+\graphicspath{{figures/}}
+
+\title{Right Alarm, Wrong Places:\\Footprint Labels Fix Where Logical Anomaly Maps Point}
+
+\author{Anonymous CVPR submission}
+
+\begin{document}
+\maketitle
+\begin{strip}
+\centering
+\includegraphics[width=\linewidth]{teaser.pdf}
+\captionsetup{hypcap=false}
+\captionof{figure}{A pin moved into an occupied compartment (cyan: the two compartments to inspect). SALAD's released labels mark an inserted part over its whole class, and its map lights up every pin; retraining on identical inputs with only the pasted footprint labelled keeps the response on the fault. Right: localization of real MVTec LOCO logical defects; bars are means over two seeds, dots are seeds with 95\% intervals.}
+\label{fig:teaser}
+\captionsetup{hypcap=true}
+\end{strip}
+\input{sec/0_abstract}
+\input{sec/1_intro}
+\input{sec/2_related}
+\input{sec/3_method}
+\input{sec/4_experiments}
+\input{sec/5_results}
+\input{sec/6_conclusion}
+
+\section*{LLM usage statement}
+OpenAI Codex and Anthropic Claude were used to implement and run the experiments, check data and code provenance, generate figures and tables from saved outputs, and draft and edit the text. Every reported number is produced from saved outputs by scripts in the supplementary package.
+
+{
+    \small
+    \bibliographystyle{ieeenat_fullname}
+    \bibliography{references}
+}
+
+\end{document}

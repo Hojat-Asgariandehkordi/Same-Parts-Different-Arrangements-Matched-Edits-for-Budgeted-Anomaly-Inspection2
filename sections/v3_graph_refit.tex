@@ -1,0 +1,14 @@
+\subsection{Refitted graph readout}
+The mean-aggregation comparator uses the original query-masked endpoint inputs, message encoder, donor-balanced fitting loss and learning-rate and early-stop rules. It uses mean pooling within each neighborhood and the original mean/max pooling across the endpoints. It omits explicit degree inputs and degree-scaled pooling. Its original GlaS four folds yield normal-link AUROC between 95.7\% and 98.2\% with better loss than a prevalence intercept in all four. All 280 query-bit flip checks give exact equality. The mean model can still use neighborhood content that covaries with degree or recognize an empty neighborhood.
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Response after refitting with mean aggregation.} AUC and top-four recovery use absolute matched probability change and donor-macro aggregation. Top-four change is refit minus original in percentage points. Intervals are donor-paired. The tiers share donors.}
+\label{tab:refit}
+\small
+\input{tables/graph_mean.tex}
+\end{table*}
+
+The original and refitted networks use a query-excluded adjacency for all tokens. A changed observed bit can affect a loss through the scoring formula without moving the fitted probability. The pair MLP is an invariance control because geometry and roles stay fixed. The degree-only probe concentrates its changed features on the four target pairs by construction. It tests whether the fitted model responds to that input. Its perfect recovery and the fixed-weight clamp should be interpreted with the refit in \cref{tab:refit}. SpotTarget studies degree-sensitive bias from including and excluding target edges \cite{zhu2024spot}. Our paired construction exposes a residual input difference after exclusion.
+
+\clearpage

@@ -1,0 +1,46 @@
+\section{Related work}
+\label{sec:related}
+\paragraph{Logical anomaly detection.}
+MVTec LOCO introduced anomalies that violate constraints on the count, position or combination of otherwise normal parts \cite{bergmann2022}. Its GCAD baseline and later student--teacher, memory and Gaussian models detect many of them from appearance features \cite{bergmann2022,batzner2024,roth2022,rippel2021}. Component-level methods segment the scene into parts and compare part attributes, histograms or correspondences \cite{liu2023,kim2024psad,hsieh2024csad,peng2025}. SALAD adds a composition branch that reads a part-segmentation map, reconstructs it, and predicts an anomaly map trained on synthetic edits of the map \cite{fucka2025}. Vision--language and rule-based systems reason about explicit constraints \cite{jeong2023winclip,zhou2024anomalyclip,zhang2025logsad,ji2026,zhang2026logico}. We do not propose a detector. We ask what a strong detector's map asks an inspector to do, and why.
+
+\paragraph{Synthetic anomalies and their labels.}
+Self-supervised detectors learn from synthetic defects such as CutPaste, Perlin-masked texture, natural-looking patch blending or generated defects \cite{li2021cutpaste,zavrtanik2021draem,schluter2022nsa,hu2024anomalydiffusion}. LogicAL synthesizes logical defects for localization \cite{zhao2024}. Work in this area usually varies the appearance of the synthetic defect. The spatial extent of its \emph{label} receives less scrutiny, although it defines what the discriminative head is rewarded for marking. SALAD deliberately labels every pixel of an inserted part's class, because an extra screw in an unordered bag is not distinguishable from the original screws \cite{fucka2025}. We test the consequence of that choice when the faulty location is identifiable.
+
+\paragraph{Localization metrics and operating points.}
+Pixel AUROC and per-region overlap (PRO) summarize a map over all thresholds \cite{bergmann2021ijcv}. MVTec LOCO's saturated PRO (sPRO) accommodates ambiguous logical regions and integrates only up to 5\% false-positive rate, because maps with many false positives are not useful \cite{bergmann2022}. These curves are computed over test thresholds. A deployed system instead fixes a scene cutoff and a spatial cutoff in advance, often with conformal guarantees on normal data \cite{bates2023,angelopoulos2023}. We report the cost of such fixed operating points in the unit an inspector actually opens: a compartment.
+
+\paragraph{Matched and counterfactual evaluation.}
+Minimal pairs isolate one factor while holding others fixed, as in contrast sets, counterfactually augmented data and Winoground \cite{gardner2020contrast,kaushik2020counterfactual,thrush2022}. Sanity checks for saliency maps likewise ask whether a map changes when, and only when, the relevant cause changes \cite{adebayo2018sanity}. Our edits apply this logic to logical anomalies with real photographs. A valid sham and a fault move the same part by the same distance. A vacancy-only control removes it without placing it elsewhere.
+
+\section{Matched rearrangements and inspection cost}
+\label{sec:method}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{protocol.pdf}
+\caption{\textbf{Protocol.} (a) From one held-out photograph we make three edits of the same intact pin: a valid sham (moved within its compartment), a fault (moved into an occupied neighbor) and a vacancy-only control (removed). Displacement, cutout and fill are matched between sham and fault. Parts are either taken from the released maps (oracle) or re-segmented from each edited photograph (extracted). (b) An inspector receives a queue only if the tray alarms. Cutoffs and list lengths are fixed on 69 development trays. Cost is the number of intact compartments in the queue.}
+\label{fig:protocol}
+\end{figure*}
+
+\paragraph{Trays and edits.}
+MVTec LOCO pushpin trays have 15 compartments and the published rule allows exactly one pin per compartment \cite{bergmann2022}. We use all 138 good test photographs and all 69 good validation photographs; in each, the released part map resolves one intact pin per compartment. For each photograph, a pin whose cutout and halo fit inside its compartment is translated without resampling (\cref{fig:protocol}a). The \emph{valid sham} keeps it in its compartment. The \emph{fault} moves it the same distance into a face-adjacent occupied compartment, leaving one compartment empty and another with two pins. The \emph{vacancy-only} control fills the vacated support exactly as the fault does but inserts nothing. All placements are checked for collisions, divider clearance and background agreement before any model is run. The two affected compartments are the fault targets; the vacated compartment alone is the vacancy target.
+
+\paragraph{Two input paths.}
+SALAD's composition branch reads a six-class part map \cite{fucka2025}. On the \emph{oracle} path we edit the released map directly. On the \emph{extracted} path a separately trained U-Net re-segments every photograph, including the unedited source, so that compositing traces and segmentation errors reach the detector as they would in deployment. Unless stated otherwise we report the extracted path; the oracle path is in the supplement and agrees.
+
+\paragraph{From a map to an inspection queue.}
+A tray alarms when its map maximum exceeds a split-conformal cutoff fit on the 69 unedited development trays at a nominal 10\% false-alarm rate, a marginal guarantee under exchangeability \cite{bates2023,angelopoulos2023}. Only an alarmed tray opens a queue. Each compartment $c$ receives the maximum score $g_c$ of the map inside it. We compare three ways to form the queue $Q$, each fixed on development before test maps are read:
+\begin{itemize}\setlength\itemsep{0pt}
+\item \emph{Threshold}: $Q=\{c: g_c\ge t\}$, with $t$ the highest cutoff reaching 95\% target recall on development faults.
+\item \emph{List}: the top $k$ compartments, with the smallest $k$ reaching 95\% development recall.
+\item \emph{Relative}: $Q=\{c: g_c\ge \alpha\max_{c'} g_{c'}\}$, with the largest such $\alpha$.
+\end{itemize}
+For $n$ test trays with target sets $T_i$ we report target recall $R=\sum_i|Q_i\cap T_i|/\sum_i|T_i|$ and \emph{wasted inspections} $W=\frac1n\sum_i|Q_i\setminus T_i|$, the number of intact compartments opened per faulty tray. A scene that fails to alarm opens nothing and misses its targets. We also report the queue on unedited sources and valid shams (clean-tray workload). A list needs the number of faulty compartments to be roughly constant. We therefore also pool relocations (two targets) with vacancy-only trays (one target) and refit every policy on the pooled development trays.
+
+\paragraph{Why the edit is matched.}
+Comparing the fault with the sham holds the moved part, its displacement and the fill fixed, so a difference reflects where the pin ends up. Comparing the fault with the vacancy-only control holds the vacated compartment fixed, so a difference reflects the inserted pin. These controls remove the specified editing nuisances. They do not remove every destination-dependent cue in the photograph, which is why we also report the oracle path, where only the part map changes.
+
+\paragraph{Diagnostics.}
+To see where a map changes, we compare each edited map with its source and record, for the 13 untouched compartments, whether any pixel moves by at least 0.5, the fraction of their area that does, and within-compartment upper quantiles of the change. A cell analogue of low-FPR sPRO integrates target-compartment recall over the pooled false-compartment rate up to 5\% \cite{bergmann2022}. These quantities use the source map and serve diagnosis only; every inspection result uses the edited map alone.
+
+\paragraph{Statistics.}
+All intervals are 95\% percentile intervals from 4,000 bootstrap resamples of original photographs, carrying every edit, input path and model of that photograph together. They condition on the fitted models and cutoffs. Two fixed halves of the test photographs and two training seeds check stability.

@@ -1,0 +1,38 @@
+\section{Method}
+\label{sec:method}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{protocol.pdf}
+\caption{Matched rearrangements and the inspection protocol. (a) Three edits of the same intact pin. Displacement, cutout and fill match between the valid sham and the fault; cyan marks the compartments to inspect. (b) A tray opens a queue only if it alarms; every cutoff and list length is fixed on development trays.}
+\label{fig:protocol}
+\end{figure*}
+
+\subsection{Matched rearrangements}
+\label{sec:edits}
+A MVTec LOCO pushpin tray has 15 compartments, and its rule allows exactly one pin per compartment \cite{bergmann2022}. From each photograph we take one intact pin whose cutout and halo fit inside its compartment and translate it without resampling (\cref{fig:protocol}a). The \emph{valid sham} keeps the pin inside its compartment. The \emph{fault} moves it the same distance into a face-adjacent occupied compartment, leaving one compartment empty and another with two pins. The \emph{vacancy-only} control fills the vacated support exactly as the fault does but inserts nothing. Collisions, divider clearance and background agreement are checked before any model is run. Comparing the fault with the sham holds the moved part, its displacement and the fill fixed, so a difference reflects where the pin lands. Comparing the fault with the vacancy-only control holds the empty compartment fixed, so a difference reflects the inserted pin. The two affected compartments are the targets of a fault; the vacated compartment is the target of a vacancy.
+
+SALAD's composition branch reads a six-class part map \cite{fucka2025}. On the \emph{oracle} path we edit the released part map directly. On the \emph{re-segmented} path a separately trained U-Net segments every photograph, including the unedited source, so compositing traces and segmentation errors reach the detector as they would in deployment. We report the re-segmented path unless stated otherwise.
+
+\subsection{Inspection at fixed operating points}
+\label{sec:inspection}
+For a tray $i$ the detector returns an anomaly map $S_i\in[0,1]^{256\times256}$. Let $c\in\{1,\dots,15\}$ index the compartments and let $g_{i,c}=\max_{p\in c}S_i(p)$ be the score of compartment $c$. The tray alarms when $\max_p S_i(p)>\tau$, where $\tau$ is a split-conformal cutoff on the 69 unedited development trays at a nominal 10\% false-alarm rate, a marginal guarantee under exchangeability \cite{bates2023,angelopoulos2023}. An alarmed tray yields a queue $Q_i$ of compartments to open, formed in one of three ways: a \emph{threshold} $Q_i=\{c: g_{i,c}\ge t\}$, a \emph{list} of the $k$ highest-scoring compartments, or a \emph{relative} cutoff $Q_i=\{c: g_{i,c}\ge\alpha\max_{c'}g_{i,c'}\}$. Each parameter $t$, $k$ or $\alpha$ is the most selective value that reaches 95\% target recall on the development faults. A tray that does not alarm opens nothing. With $T_i$ the set of target compartments of tray $i$ and $n$ faulty trays, we report target recall and wasted inspections,
+\begin{equation}
+R=\frac{\sum_i|Q_i\cap T_i|}{\sum_i|T_i|},\qquad W=\frac1n\sum_i|Q_i\setminus T_i|,
+\label{eq:cost}
+\end{equation}
+so $W$ counts intact compartments opened per faulty tray. A list exploits a known number of targets, so we also pool relocations (two targets) with vacancies (one target) and refit every parameter on the pooled development trays.
+
+\subsection{Why class-wide labels spread}
+\label{sec:theory}
+SALAD trains its discriminative head on synthetic edits of a training part map: Perlin-shaped relabeling, relabeling of a connected component, insertion of a rotated component from another map, and relabeling plus insertion \cite{fucka2025}. For an insertion of class $k$ with pasted pixels $P$, the released implementation sets the target $Y^{\mathrm{cw}}(p)=\mathbb 1[\ell(p)=k]$ for every pixel $p$ whose edited label $\ell(p)$ is $k$, that is, the whole class channel. The footprint target is $Y^{\mathrm{fp}}(p)=\mathbb 1[p\in P]$. Other edits keep their targets in both cases, so $Y^{\mathrm{fp}}\le Y^{\mathrm{cw}}$ pixel by pixel. For an edited map $x$ and a pixel $p$, write $q^{\mathrm{cw}}(x,p)$ and $q^{\mathrm{fp}}(x,p)$ for the probabilities, under the training distribution of edits, that the respective target is 1.
+
+\begin{proposition}
+\label{prop:optimal}
+Let $\ell(s,y)$ be a pixel loss that is non-increasing in the score $s$ for $y=1$ and non-decreasing for $y=0$, as are binary cross-entropy, the sigmoid focal loss, the L1 loss on the sigmoid and SALAD's sum $5\,\mathrm{focal}+\mathrm{L1}$. Then the score minimizing the conditional risk $r(s;q)=q\,\ell(s,1)+(1-q)\,\ell(s,0)$ can be chosen non-decreasing in $q$. Consequently:
+(i) under class-wide labels, every pixel of class $k$ has target probability at least the posterior probability that the map contains an insertion of class $k$, so when an insertion is evident an optimal head raises all of them;
+(ii) under footprint labels, if an inserted instance is one of $m$ instances the map cannot tell apart, its pixels have target probability at most $1/m$ plus the probability of the other edits.
+\end{proposition}
+\begin{proof}
+$\partial_s r(s;q)$ is $q\,\partial_s\ell(s,1)+(1-q)\,\partial_s\ell(s,0)$, so $\partial_q\partial_s r=\partial_s\ell(s,1)-\partial_s\ell(s,0)\le0$. The risk has decreasing differences in $(s,q)$, and Topkis' theorem \cite{topkis1978} gives a minimizer that is non-decreasing in $q$. For (i), every class-$k$ pixel of a map with a class-$k$ insertion has $Y^{\mathrm{cw}}=1$, so $q^{\mathrm{cw}}$ is at least the posterior probability of that insertion for each of them. For (ii), if $m$ instances are indistinguishable given $x$, the posterior probability that a given one was pasted is at most $1/m$.
+\end{proof}
+Part (i) predicts the spread we observe whenever an insertion is evident. Part (ii) predicts when footprint labels cannot help. If the task treats instances as interchangeable, footprint labels cap each instance's score, while the task's own annotation may cover all of them. Footprint labels require no extra information, because the generator knows $P$ for every edit.

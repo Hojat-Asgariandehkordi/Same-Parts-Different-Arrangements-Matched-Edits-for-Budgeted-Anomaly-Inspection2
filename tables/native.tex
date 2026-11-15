@@ -1,0 +1,22 @@
+\begin{tabular}{llrrrrrcc}
+\toprule
+\multicolumn{2}{l}{Native test set} & Released & \multicolumn{2}{c}{Class-wide} & \multicolumn{2}{c}{Footprint} & \multicolumn{2}{c}{Footprint $-$ class-wide} \\
+\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+ & & & seed 1 & seed 2 & seed 1 & seed 2 & seed 1 & seed 2 \\
+\midrule
+Pushpins & all logical & 33.9 & 34.9 & 33.4 & \textbf{78.5} & 71.6 & +43.6 [26.6, 56.0] & +38.2 [16.5, 54.7] \\
+ & extra pin & 16.4 & 14.0 & 18.7 & \textbf{83.7} & 70.1 & +69.7 [47.4, 79.7] & +51.4 [21.0, 69.1] \\
+ & missing pin & 45.2 & 47.7 & 41.7 & \textbf{70.8} & 69.6 & +23.2 [5.7, 41.9] & +27.9 [9.4, 48.5] \\
+ & missing separator & 72.3 & 85.6 & 77.0 & 94.0 & \textbf{95.3} & +8.4 [5.6, 11.4] & +18.3 [10.9, 25.1] \\
+\midrule
+Breakfast box & all logical & 18.3 & 18.2 & 18.5 & 27.2 & \textbf{30.7} & +9.0 [4.2, 16.2] & +12.1 [6.9, 20.2] \\
+ & missing cereals & 55.1 & 60.0 & 54.7 & 86.3 & \textbf{89.2} & +26.4 [11.6, 43.3] & +34.5 [18.3, 52.7] \\
+\midrule
+Juice bottle & all logical & 33.6 & \textbf{39.5} & 38.3 & 39.4 & 38.4 & $-$0.1 [$-$1.4, 1.9] & +0.0 [$-$1.5, 2.7] \\
+\midrule
+Splicing conn. & all logical & 17.8 & 18.0 & \textbf{23.6} & 18.8 & 18.5 & +0.8 [$-$0.7, 4.8] & $-$5.1 [$-$11.9, 1.0] \\
+\midrule
+Screw bag & all logical & \textbf{17.6} & 15.1 & 14.4 & 15.4 & 15.6 & +0.3 [$-$5.0, 2.6] & +1.2 [$-$2.1, 2.4] \\
+ & extra part & 2.5 & \textbf{4.3} & 0.6 & 0.0 & 0.0 & $-$4.3 [$-$16.8, $-$0.1] & $-$0.6 [$-$9.6, $-$0.0] \\
+\bottomrule
+\end{tabular}

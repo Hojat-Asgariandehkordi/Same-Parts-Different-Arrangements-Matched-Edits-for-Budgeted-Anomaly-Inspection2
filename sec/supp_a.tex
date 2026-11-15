@@ -1,0 +1,66 @@
+\section{Order of analyses and what was registered}
+\label{sec:supp_order}
+The 138 test and 69 development pushpin photographs, their edits, the re-segmenting U-Net and the released-map results were fixed in earlier rounds (Part B). This round added the following.
+\begin{itemize}\setlength\itemsep{1pt}
+\item \emph{Registered before scoring.} A protocol (SHA-256 prefix \texttt{a1e0af83}) frozen before any new head was scored specifies a from-initialization replication of the label comparison with SALAD's full 70{,}000-step recipe (\cref{sec:supp_scratch}), the pooled-tray analysis and the full-system calibration diagnostic.
+\item \emph{Descriptive analyses of saved maps.} Threshold, list and relative queues for the released and earlier fine-tuned heads.
+\item \emph{Added during this round, not registered.} The identical-input continuations reported in the main paper, the native AU-sPRO and fixed-operating-point evaluation of real defects, the instance-insertion probe and the two appearance detectors. They use the same fixed splits and decision rules, and every head and seed that was trained is reported, including the categories where footprint labels do not help.
+\end{itemize}
+
+\section{Inspection definitions}
+\label{sec:supp_defs}
+\paragraph{Scene gate.} The scene cutoff is the 63rd smallest map maximum of the 69 unedited development trays (the split-conformal $\lceil 70\times0.9\rceil$ order statistic), and a tray alarms when its maximum is strictly greater. Under exchangeability this bounds the marginal false-alarm probability of a new normal tray by 10\%; it does not bound the realized rate on a particular test set.
+\paragraph{Queues.} Compartments are the 15 cells of the registered tray grid, and a compartment's score is the maximum of the map inside it. Only an alarmed tray opens a queue. The threshold is the highest cutoff at which at least 95\% of development targets on alarmed trays are queued; the list length is the smallest $k$ with the same property (ties broken by compartment index); the relative cutoff is the largest $\alpha$ on a 0.001 grid with the same property. Pooled trays contain the 69 development relocations and the 69 development vacancies, and every parameter is refit on them. On real defects we use the pooled parameters of each head, because real trays have one or several faulty compartments.
+\paragraph{Diagnostics.} Change statistics compare an edited map with its own source on the 13 compartments untouched by the relocation, for every edit, so the three edits are compared on identical cells. The cell analogue of low-FPR sPRO integrates target-compartment recall against the false-compartment rate up to 5\% and normalizes; ``fault'' uses the 13 untouched compartments of each faulty tray as negatives and ``all'' adds every compartment of the unedited source and the valid sham.
+
+\section{Identical-input continuations}
+\label{sec:supp_ft}
+For each category and seed, one process loads the released composition weights, freezes the released reconstruction autoencoder, and copies the discriminative U-Net into a class-wide and a footprint arm. Both arms consume one prefetched stream of 1{,}600 SALAD steps. Each step takes the next map of a per-epoch permutation of the official good training maps and its clean copy, and with probability 1/2 applies one of the four pinned edit families with a uniformly drawn donor map. The loss is SALAD's $5\times$ sigmoid focal plus L1 on the discriminative map. Adam ($10^{-5}$, weight decay $10^{-5}$) runs with a tenfold decay at step 1{,}520, and the final weights are used. This matches the 800 synthetic edits and 3:1 clean-to-edited ratio of the earlier continuation of Part B. The arms differ only in the insertion target, and the receipts store the hash of the shared input sequence. In the released generator, an insertion's target covers a median of 16 times the pasted area (median of per-edit ratios over 204 replayed pushpin insertions; the medians of the two areas themselves are 19{,}800 and 416 pixels).
+
+\section{Native AU-sPRO}
+\label{sec:supp_native}
+\paragraph{Rules.} We read the official MVTec LOCO evaluation code to fix three rules. (i) Each ground-truth file is one defect channel with a defect-specific saturation: $\min(\text{threshold},\text{area})$ pixels for absolute and $\text{threshold}\times\text{area}$ for relative saturation; the channel's sPRO at a threshold is $\min(\text{TP area}/\text{saturation},1)$. (ii) A false positive is a positive pixel outside every channel of its image, and the false-positive rate pools all good and anomalous test images. (iii) The area under the mean sPRO curve is integrated up to a maximum false-positive rate and divided by it. We apply these rules to the $256{\times}256$ maps: ground-truth channels are downsampled by nearest neighbour and absolute saturation thresholds are scaled by the area ratio. Thresholds are 3{,}001 quantiles of the negative pixels between the 85th and 100th percentile plus $\pm\infty$. Only logical anomalies and good images enter.
+\paragraph{Agreement with the official evaluator.} \officialSentence
+\paragraph{Intervals.} We resample the test images (good and anomalous) with replacement, 2{,}000 times, and recompute the pooled false-positive rate and mean sPRO on each draw; all heads use the same draws, so differences are paired.
+\begin{table*}[t]
+\centering
+\caption{Native logical anomalies in every category with a retrained pair: AU-sPRO up to 5\% FPR (\%) with 95\% intervals, and image AUROC (\%).}
+\label{tab:native_full}
+\footnotesize\setlength{\tabcolsep}{3pt}
+\input{tables/native_full.tex}
+\end{table*}
+
+\section{Real defects at fixed operating points}
+\label{sec:supp_op}
+A compartment of a real pushpin image is a target when the union of its ground-truth channels covers at least 20 of its pixels at $256{\times}256$. The scene cutoff, threshold and list length of each head are the pooled parameters fitted on the development trays (\cref{sec:supp_defs}); nothing is fitted on real defects. \Cref{tab:native_op} reports every head and both queue policies with 95\% intervals over test images.
+\begin{table*}[t]
+\centering
+\caption{Real pushpin defects at development-fixed operating points: recall of defective compartments, intact compartments opened per anomalous image, compartments opened per good image, and scene alarm rates.}
+\label{tab:native_op}
+\footnotesize\setlength{\tabcolsep}{4pt}
+\input{tables/native_op.tex}
+\end{table*}
+
+\section{Training from initialization}
+\label{sec:supp_scratch}
+\input{sections/supp_scratch.tex}
+
+\section{Instance-insertion probe}
+\label{sec:supp_insertion}
+For a category with a multi-instance part class we take every official validation (development) and test good part map and paste one intact instance of that class from an official training map. Donor instances are connected components of the class with an area in the interquartile range of training instances (pushpins, screw bag) or between 2{,}000 and 4{,}500 pixels (a single fruit in breakfast box, whose fruits usually merge into one region). The placement is drawn uniformly, using a hash of the file name, among positions where the whole donor lies on the substrate on which the class normally rests (compartment floor, bag, or the cereal side of the box), at least three pixels from existing instances of the class. Pushpins then have an extra pin in a compartment, screw bags an extra part, and breakfast boxes a fruit in the wrong compartment; all three violate the published rules. ``Same-class any'' is the fraction of untouched same-class instances whose map changes by at least 0.5 somewhere, ``same-class area'' the fraction of their pixels that do, and ``other classes'' the same fraction over pixels of the remaining part classes more than ten pixels from the paste. Splicing connectors were excluded because their contacts leave no free substrate for an extra instance.
+\begin{table*}[t]
+\centering
+\caption{Instance-insertion probe on part maps (composition branch). Instance AUROC ranks the pasted instance against the untouched instances of its class.}
+\label{tab:insertion}
+\footnotesize\setlength{\tabcolsep}{4pt}
+\input{tables/insertion.tex}
+\end{table*}
+
+\section{Appearance detectors}
+\label{sec:supp_appearance}
+\paragraph{EfficientAD.} SALAD's local appearance branch is an EfficientAD student--teacher--autoencoder \cite{batzner2024} with the released pushpin weights. We use the pinned normalization of the full-system run (Part B) and compute its normalized map on every development and test edit; the map depends on RGB only, so both input paths coincide.
+\paragraph{PatchCore.} We implement PatchCore \cite{roth2022} with an ImageNet WideResNet-50-2, layer-2 and layer-3 features with $3{\times}3$ local averaging, layer-3 features upsampled to the layer-2 grid, a 1\% greedy coreset (3{,}809 patch features from the 372 official good training photographs, selected after a random projection to 128 dimensions), nearest-neighbour distances, bilinear upsampling to $256{\times}256$ and Gaussian smoothing with $\sigma=4$. Inputs are the same uncropped composites as for the other detectors. Its native logical AUROC on the official pushpin test split is 73.2\%. Of the sham trays each detector queues, the queue includes the sham's edited compartment in 120 of 121 (EfficientAD) and 123 of 123 (PatchCore).
+
+\section{Full SALAD operating point}
+\label{sec:supp_full}
+Full SALAD is replayed with the released weights and pinned code (Part B). SALAD normalizes each branch with statistics from the official validation split; we add a split-conformal 10\% cutoff on the 69 unedited development trays, which is our operating point and not one published with SALAD. For the normal-test cutoff we fit the same rule on the unedited sources of one fixed half of the test trays and apply it to all edits of the other half, then swap halves and add the counts. On the re-segmented path, the Gaussian branch's median normalized score is $+0.06$ on validation and $+2.73$ on unedited test trays, with the same pattern on the oracle path. The other branches shift little, and the shift is present in native good test images.

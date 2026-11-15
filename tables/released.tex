@@ -1,0 +1,15 @@
+\begin{tabular}{lrrrrc}
+\toprule
+Queue policy & \multicolumn{2}{c}{Relocations} & \multicolumn{2}{c}{Pooled} & Clean trays \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & $R$ (\%) & $W$ & $R$ (\%) & $W$ & Src.\,/\,sham \\
+\midrule
+Threshold, 95\% dev.\ recall & 95.7 & 11.07 & 93.7 & 4.58 & 0.00 / 0.00 \\
+Relative, 95\% dev.\ recall & 95.7 & 11.07 & 93.7 & 4.58 & 0.04 / 0.07 \\
+List, $k$ fixed on dev. ($k{=}3$/3) & 97.1 & 1.06 & 98.1 & 1.53 & 0.11 / 0.15 \\
+Top 2 (fixed) & 88.8 & 0.22 & 92.5 & 0.61 & -- \\
+Top 3 (fixed) & 97.1 & 1.06 & 98.1 & 1.53 & -- \\
+\midrule
+Explicit rule (extra knowledge) & 100.0 & 0.00 & 100.0 & 0.00 & 0.00 / 0.00 \\
+\bottomrule
+\end{tabular}

@@ -1,0 +1,128 @@
+\subsection{Paired discriminative fine-tunes}
+\paragraph{Pinned label construction.}
+We use release revision \texttt{753ba942025d2644c494a18c1fb4b60ae15332d5} and the released checkpoints \cite{fucka2025}. \texttt{copy\_label\_diff\_img} overwrites the donor footprint in the edited six-channel map, then sets both the discriminative mask and the function's reconstruction-mask return value to the entire resulting inserted class plane. \texttt{copy\_and\_change} takes the maximum of the same-image relabel mask and this insertion mask. The reconstruction-mask return is ignored by the pinned training loop. The actual reconstruction objective uses the clean source labels with multiclass focal and Dice. The discriminative objective is
+\[
+  5\,{\rm mean}_{p}{\rm FL}_{.25,2}(z_p,y_p)
+  + {\rm mean}_{p}|\sigma(z_p)-y_p|.
+\]
+Here $\mathrm{FL}$ uses the default sigmoid-focal coefficients $\alpha=.25$ and $\gamma=2$. Both terms average uniformly over all batch pixels. No inverse-area reweighting is used. The footprint variant records the paste mask before class expansion and changes the insertion portion only. The original relabel target remains intact for the combined operation. Both arms share the Perlin perturbation with bilinear OpenCV rotation and the pinned rotated donor insertion and relabel functions. The entire autoencoder is frozen, so the clean reconstruction objective does not train either U-Net.
+
+\paragraph{Training schedule and receipts.}
+There are 372 normal training originals and 371 eligible rule-aware training edits. Four-slot batches use two sampled clean maps, one sampled SALAD-family edit, and one edit from the training photo pool. In the last slot the draw proportions for relocation, sham, and vacancy are $1/2$, $1/4$, and $1/4$. Four SALAD edit families are sampled uniformly. In the upstream-only follow-up, the fourth slot is replaced by its clean source, preserving every augmented slot, donor and transform from the matched run. The expected 3:1 clean-to-synthetic ratio matches the pinned loader after its extra clean copy. Adam uses weight decay $10^{-5}$. Rule-aware fine-tuning starts at $3{\times}10^{-5}$, and upstream-only continuation starts at $10^{-5}$. Both run 800 steps in batches of four and multiply the learning rate by 0.1 after step 760. We use the last checkpoint for seeds 3407 and 3419. Every consumed clean map, input map and binary target is verified against the locked per-example digests. Initial checkpoint and minibatch sequence hashes agree within each pair. The target sequence hashes differ. The head replaces a released head of the same architecture at inference. It adds training, rule-aware edit construction and validation calibration.
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Positive mask area in paired rule-aware training.} Positive counts are means over examples of each edit type on a $256{\times}256$ grid. The upstream-only follow-up uses identical upstream edit slots and replaces the task-edit slot with a clean map.}
+\label{tab:area_v3}
+\small
+\input{tables/positive_area.tex}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Rule-aware fine-tuning on oracle labels.} See the main inspection table for definitions and the extracted results. Source and sham counts are paired within originals.}
+\label{tab:oracle_v3}
+\small
+\setlength{\tabcolsep}{4.5pt}
+\input{tables/inspection_oracle.tex}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Paired rule-aware differences at the locked cutoffs.} Untouched is in marks per fault. Target recall, sham alerts and region area use percentage points. Each interval uses 4,000 resamples of original photographs.}
+\label{tab:contrasts_v3}
+\small
+\input{tables/inspection_deltas.tex}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Additional rule-aware operating points.} Top 3 is both targets at rank three. The 98\% and 0.5-cost cutoffs are set on development. Recalls and the fault-only low-FPR region area are percentages. Untouched, sham and vacancy-only costs are means per image. Sham marks and vacancy-only untouched marks use the 95\% development cutoff.}
+\label{tab:operating_v3}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\input{tables/other_queues.tex}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Descriptive equal-cost follow-up on extracted test faults.} Compare recall at two exact realized costs in untouched marks per image by interpolating the common-threshold sweep. Gains are against the released maximum in percentage points. Intervals resample the same original photos across readouts. The scene gate passes every fault in these rows. The development-locked comparison remains the prospective decision test.}
+\label{tab:exactcost}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\input{tables/realized_cost.tex}
+\end{table*}
+
+\subsection{Closer continuation of the released training recipe}
+The two rule-aware class-wide heads detect the faults and vacancies but their localization fails the competence check. We therefore report a separately locked continuation using only the original synthetic families in the augmented slot. The released head is the untouched reference. A paired effect here identifies target policy during this continuation. An end-to-end counterfactual of the released model would also refit the reconstruction network and start before the original 70,000-step training schedule. Positive area remains a component of the intervention.
+\input{tables/upstream_text.tex}
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Upstream-only continuation on extracted maps.} The original SALAD-style augmentations are used without explicit relocation targets from the pushpin rule. Scene alerts and spatial metrics have the same definitions as the main table.}
+\label{tab:upstream_e}
+\small
+\setlength{\tabcolsep}{4pt}
+\input{tables/inspection_extracted_upstream.tex}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Upstream-only continuation on oracle labels.} The released oracle path is shown for comparison.}
+\label{tab:upstream_o}
+\small
+\setlength{\tabcolsep}{4pt}
+\input{tables/inspection_oracle_upstream.tex}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Paired differences in the upstream-only continuation.} Untouched marks per fault and percentage-point differences at locked cutoffs.}
+\label{tab:upstream_diff}
+\small
+\input{tables/inspection_deltas_upstream.tex}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Upstream-only alternate operating points.} Recalls and region area in percent. Counts are marks per photo. The released 99th percentile, 95th percentile and reconstruction product results appear in \cref{tab:operating_v3}.}
+\label{tab:upstream_alt}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\input{tables/other_queues_upstream.tex}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Development controls and inspection thresholds.} Cell AUROC is measured on matched development faults. $t_s$ is the scene threshold. $t_{95}$ and $t_{98}$ use 95\% and 98\% target recall, and $t_{\rm budget}$ uses 0.5 untouched cells. Numbers are rounded for display. All decisions use full-precision thresholds.}
+\label{tab:thresholds_v3}
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\input{tables/thresholds.tex}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Stability on two fixed photo halves.} Difference in untouched marks per fault, footprint minus class-wide. The 63 and 75 originals were assigned before fitting. The recipe with relocation training is the primary test. The upstream-only continuation reuses the same originals.}
+\label{tab:halves_v3}
+\scriptsize
+\input{tables/queue_halves.tex}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Collateral change after rule-aware adaptation.} Cells and pixels report percentages with absolute change $\geq0.5$. Max and quantiles are mean within-cell statistics in sigmoid units. We use the same 13 untouched fault cells for each variant.}
+\label{tab:changes_v3}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\input{tables/changes.tex}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Collateral change after upstream-only continuation.} The region definition matches \cref{tab:changes_v3}.}
+\label{tab:changes_upstream}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\input{tables/changes_upstream.tex}
+\end{table*}

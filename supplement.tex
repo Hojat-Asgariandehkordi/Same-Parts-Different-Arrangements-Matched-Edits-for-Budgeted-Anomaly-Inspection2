@@ -1,0 +1,48 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+\usepackage[review]{cvpr}
+\input{preamble}
+\definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
+\usepackage[pagebackref,breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
+\def\confName{CVPR}
+\def\confYear{2027}
+\input{tables/numbers}
+\graphicspath{{figures/}}
+\title{Right Alarm, Wrong Places:\\Footprint Labels Fix Where Logical Anomaly Maps Point}
+\author{Anonymous CVPR submission}
+\begin{document}
+\maketitlesupplementary
+
+\noindent Part A documents every analysis in the main paper. Part B preserves the record of the earlier rounds of this study: short fine-tunes of the released head, the juice-bottle label rule, and the graph audit that motivated the matched-edit design. All tables are generated from saved outputs by the scripts in the package.
+
+\section*{Part A: analyses in the main paper}
+\input{sec/supp_a}
+
+\section*{Part B: record of earlier rounds}
+\section{Short fine-tunes of the released head}
+These experiments preceded the identical-input continuations of the main paper. They adapt the released composition U-Net for 800 steps with the reconstruction autoencoder frozen, either on SALAD's own edit families (``original edits'') or with an added rule-aware training variant (``rule-aware''), and compare class-wide with footprint insertion targets inside each recipe. \Cref{tab:factorial} summarizes the resulting $2{\times}2$ design.
+\begin{table*}[t]
+\centering
+\caption{Training recipe $\times$ insertion label in 800-step fine-tunes of the released head (matched trays, re-segmented path; same columns as the main matched-tray table). Development cell AUROC below 90\% fails the locked competence check ($^\dagger$).}
+\label{tab:factorial}
+\footnotesize\setlength{\tabcolsep}{3pt}
+\input{tables/factorial.tex}
+\end{table*}
+\input{sections/v3_finetunes.tex}
+
+\section{Full fusion and the juice-bottle rule}
+\input{sections/v3_full_juice.tex}
+
+\section{Graph audit}
+\input{sections/v3_graph_refit.tex}
+\input{sections/v3_earlier_record.tex}
+
+\input{sections/v3_data_use.tex}
+
+\section*{LLM usage statement}
+OpenAI Codex and Anthropic Claude were used to implement and run the experiments, check data and code provenance, generate figures and tables from saved outputs, and draft and edit the text. Every reported number is produced from saved outputs by scripts in the supplementary package.
+
+{\small
+\bibliographystyle{ieeenat_fullname}
+\bibliography{references}
+}
+\end{document}
