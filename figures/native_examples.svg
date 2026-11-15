@@ -44,7 +44,7 @@ iVBORw0KGgoAAAANSUhEUgAAAOQAAADkCAYAAACIV4iNAADn/0lEQVR4nJz959MuyZXYB/4ys+pxr7/e
    <g id="matplotlib.axis_1"/>
    <g id="matplotlib.axis_2">
     <g id="text_1">
-     <text style="font-size: 5.8px; font-family: 'Times New Roman', 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #52514e" x="5.464656" y="34.878499" transform="rotate(-90 5.464656 34.878499)">Extra pin</text>
+     <text style="font-size: 7.2px; font-family: 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #52514e" x="5.464656" y="34.878499" transform="rotate(-90 5.464656 34.878499)">Extra pin</text>
     </g>
    </g>
    <g id="QuadContourSet_1">
@@ -333,7 +333,7 @@ z
 " clip-path="url(#p3ab291efe8)" style="fill: none; stroke: #35c9f4; stroke-width: 0.7"/>
    </g>
    <g id="text_2">
-    <text style="font-weight: 700; font-size: 6px; font-family: 'Times New Roman', 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #1e2836" x="34.974936" y="5.603437" transform="rotate(-0 34.974936 5.603437)">Photo, ground truth</text>
+    <text style="font-weight: 700; font-size: 7.2px; font-family: 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #1e2836" x="34.974936" y="5.603437" transform="rotate(-0 34.974936 5.603437)">Photo, ground truth</text>
    </g>
   </g>
   <g id="axes_2">
@@ -637,7 +637,7 @@ z
 " clip-path="url(#p7404219b90)" style="fill: none; stroke: #35c9f4; stroke-width: 0.5"/>
    </g>
    <g id="text_3">
-    <text style="font-weight: 700; font-size: 6px; font-family: 'Times New Roman', 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #6f6e6a" x="91.161562" y="5.603437" transform="rotate(-0 91.161562 5.603437)">Released</text>
+    <text style="font-weight: 700; font-size: 7.2px; font-family: 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #4d4d4d" x="91.161562" y="5.603437" transform="rotate(-0 91.161562 5.603437)">Released</text>
    </g>
   </g>
   <g id="axes_3">
@@ -941,7 +941,7 @@ z
 " clip-path="url(#p3a39014fd7)" style="fill: none; stroke: #35c9f4; stroke-width: 0.5"/>
    </g>
    <g id="text_4">
-    <text style="font-weight: 700; font-size: 6px; font-family: 'Times New Roman', 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #eb6834" x="147.348188" y="5.603437" transform="rotate(-0 147.348188 5.603437)">Class-wide</text>
+    <text style="font-weight: 700; font-size: 7.2px; font-family: 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #7b5ea7" x="147.348188" y="5.603437" transform="rotate(-0 147.348188 5.603437)">Class-wide</text>
    </g>
   </g>
   <g id="axes_4">
@@ -1245,7 +1245,7 @@ z
 " clip-path="url(#p8e5e058f78)" style="fill: none; stroke: #35c9f4; stroke-width: 0.5"/>
    </g>
    <g id="text_5">
-    <text style="font-weight: 700; font-size: 6px; font-family: 'Times New Roman', 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #2a78d6" x="203.534814" y="5.603437" transform="rotate(-0 203.534814 5.603437)">Footprint</text>
+    <text style="font-weight: 700; font-size: 7.2px; font-family: 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #1b8a6b" x="203.534814" y="5.603437" transform="rotate(-0 203.534814 5.603437)">Footprint</text>
    </g>
   </g>
   <g id="axes_5">
@@ -1264,7 +1264,7 @@ iVBORw0KGgoAAAANSUhEUgAAAOQAAADkCAYAAACIV4iNAADkn0lEQVR4nKT9aawlSZaYiX1m5n63t8Z7
    <g id="matplotlib.axis_9"/>
    <g id="matplotlib.axis_10">
     <g id="text_6">
-     <text style="font-size: 5.8px; font-family: 'Times New Roman', 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #52514e" x="5.448344" y="97.362104" transform="rotate(-90 5.448344 97.362104)">Missing pin</text>
+     <text style="font-size: 7.2px; font-family: 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #52514e" x="5.448344" y="97.362104" transform="rotate(-90 5.448344 97.362104)">Missing pin</text>
     </g>
    </g>
    <g id="QuadContourSet_5">
@@ -2320,7 +2320,7 @@ iVBORw0KGgoAAAANSUhEUgAAAOQAAADkCAYAAACIV4iNAADiL0lEQVR4nKz917MlSZrYif3cPeKoq/Le
    <g id="matplotlib.axis_17"/>
    <g id="matplotlib.axis_18">
     <g id="text_7">
-     <text style="font-size: 5.8px; font-family: 'Times New Roman', 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #52514e" x="5.448344" y="159.845709" transform="rotate(-90 5.448344 159.845709)">Missing separator</text>
+     <text style="font-size: 7.2px; font-family: 'TeX Gyre Termes', 'Liberation Serif', 'Nimbus Roman', 'Times', serif; text-anchor: middle; fill: #52514e" x="5.448344" y="159.845709" transform="rotate(-90 5.448344 159.845709)">Missing separator</text>
     </g>
    </g>
    <g id="QuadContourSet_9">

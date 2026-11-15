@@ -10,6 +10,13 @@
 % Import additional packages in the preamble file, before hyperref
 \input{preamble}
 
+% It is strongly recommended to use hyperref, especially for the review version.
+% hyperref with option pagebackref eases the reviewers' job.
+% Please disable hyperref *only* if you encounter grave issues,
+% e.g. with the file validation for the camera-ready version.
+%
+% If you comment hyperref and then uncomment it, you should delete *.aux before re-running LaTeX.
+% (Or just hit 'q' on the first LaTeX run, let it finish, and you should be clear).
 \definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
 \usepackage[pagebackref,breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
 
@@ -17,32 +24,207 @@
 \def\confYear{2027}
 
 \input{tables/numbers}
-\graphicspath{{figures/}}
 
-\title{Right Alarm, Wrong Places:\\Footprint Labels Fix Where Logical Anomaly Maps Point}
+%%%%%%%%% TITLE - PLEASE UPDATE
+\title{Same Parts, Different Arrangements\\Matched Edits for Budgeted Anomaly Inspection}
 
+%%%%%%%%% AUTHORS - PLEASE UPDATE
 \author{Anonymous CVPR submission}
 
 \begin{document}
 \maketitle
-\begin{strip}
+
+\begin{abstract}
+An anomaly detector that raises an alarm on a faulty product is useful only if it also tells the inspector where to look. We show that this second step can fail even when detection is perfect, and that the reason lies in how the detector is taught where a defect is. We study a tray that must hold one pushpin per compartment and edit real photographs so that the same pin moves either within its own compartment, which is allowed, or into a neighbouring compartment, which breaks the rule. A recent detector flags every faulty tray, yet to find nearly all misplaced pins it also sends the inspector to 11 of the 13 untouched compartments. Controlled retraining traces this to its training labels, which mark every pin as anomalous whenever one pin is added. Retrained from scratch to mark only the added pin, the detector finds 76--80\% of the faulty compartments on real defective trays while opening fewer than 0.4 intact compartments per tray, whereas the best way of reading the original detector finds 49\% and opens 1.1. Where parts are interchangeable, as in a bag of screws, marking every part remains the better choice.
+\end{abstract}
+
+\begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{teaser.pdf}
-\captionsetup{hypcap=false}
-\captionof{figure}{A pin moved into an occupied compartment (cyan: the two compartments to inspect). SALAD's released labels mark an inserted part over its whole class, and its map lights up every pin; retraining on identical inputs with only the pasted footprint labelled keeps the response on the fault. Right: localization of real MVTec LOCO logical defects; bars are means over two seeds, dots are seeds with 95\% intervals.}
+\caption{\textbf{Where should an inspector look after an alarm?} (a)~Matched edits of one tray (rule: one pin per compartment): the same pin moves the same distance within its compartment (valid, no target) or into an occupied neighbour (fault). Cyan: compartments to check (dashed: vacated; solid: recipient). (b)~Schematic: marking every pin of the inserted class in training makes nearly the whole tray score high, so 13 of 15 compartments are opened; marking only the pasted pin opens just the 2 targets. Measured at 95\% recall: 11.07 untouched compartments for the released detector against \scrThrWFP{} for footprint heads trained from scratch (\cref{tab:replication}). Tray art created in BioRender.}
 \label{fig:teaser}
-\captionsetup{hypcap=true}
-\end{strip}
-\input{sec/0_abstract}
-\input{sec/1_intro}
-\input{sec/2_related}
-\input{sec/3_method}
-\input{sec/4_experiments}
-\input{sec/5_results}
-\input{sec/6_conclusion}
+\end{figure}
+
+\section{Introduction}
+\label{sec:intro}
+Visual anomaly detection is usually assessed by whether a system flags defective products~\cite{bergmann2019mvtec,roth2022,batzner2024}, yet on a production line an alarm is only the first step: an operator must then locate the defect. For \emph{logical} anomalies~\cite{bergmann2022} this second step is particularly demanding. A pushpin tray with one empty and one doubled compartment contains the correct number of intact pins, and only their arrangement is wrong. A detector is helpful if its map points to the two affected compartments, and of little use if it highlights the other thirteen as well. MVTec LOCO scores localization with the saturated per-region overlap (sPRO)~\cite{bergmann2022}, which summarizes a map over all thresholds but does not state how many locations an inspector must examine at an operating point fixed in advance.
+
+Most logical detectors learn to localize from synthetic defects~\cite{li2021cutpaste,zavrtanik2021draem,zhao2024,fucka2025}, and every synthetic defect carries a pixel label that defines what the detector is rewarded for marking. SALAD~\cite{fucka2025}, a recent composition-based detector, labels an inserted part over every instance of its class, because an extra screw in an unordered bag cannot be told apart from the original screws. Whether this choice helps or hurts is hard to see on natural test sets, where faults are rare and every scene differs.
+
+We obtain exact targets by intervention (\cref{fig:teaser}a). From each held-out normal photograph we move an intact pin either within its compartment (a \emph{valid sham}) or by the same distance into an occupied neighbour (a \emph{fault}); a \emph{vacancy-only} control removes it. The sham and the fault share the cutout, fill and displacement, so a difference in the detector's response is caused by the rule violation, and the fault fixes the two compartments to inspect. A scene alarm then decides whether a tray is opened and a compartment cutoff decides which compartments are queued, both fixed on development trays; we report the fraction of target compartments found (recall) and the number of untouched compartments queued (cost).
+
+A toy example makes the failure concrete (\cref{fig:teaser}b). Suppose each compartment receives a score and the inspector opens every compartment above a cutoff chosen so that 95\% of misplaced pins are found. If the detector was trained to call every pin anomalous once a pin is inserted, untouched compartments score almost as high as the affected ones, the cutoff must fall below them, and the inspector opens 13 of 15 compartments to find 2. If it was trained to mark only the inserted pin, the same cutoff separates the two affected compartments, and the inspector opens 2. Both detectors raise the same alarm and receive the same image-level AUROC; only the second is useful.
+
+This is what we find for SALAD. Its composition branch flags all \relFaults{} faulty test trays and ranks both targets among its top three on \relTopThree\% of them, yet at 95\% target recall it queues \relThrW{} of the 13 untouched compartments per fault, because inserting a pin changes the map in \relAnyFaultX\% of untouched compartments. Retraining SALAD from scratch on identical inputs, changing only the insertion label to the pasted footprint, removes this spread. On the 91 real logical pushpin defects of MVTec LOCO, the footprint detector reaches an AU-sPRO of \scrSproFP\% (two seeds) against \scrSproCW\% for its class-wide twin. At operating points fixed on development trays it finds \scrOpR\% of the defective compartments while opening \scrOpW{} intact compartments per faulty tray. The best way of reading the released map, its top three compartments, finds \opRelListR\% and opens \opRelListW. Breakfast boxes improve as well. In screw bags, where the benchmark itself treats any of several identical parts as the extra one, footprint labels do not help, as a short analysis predicts (\cref{prop:optimal}).
+
+Our paper offers the following contributions. First, we introduce matched valid and invalid edits of real photographs with identical pixel changes, together with an inspection protocol that fixes every cutoff on development data and reports the compartments an inspector must open (\cref{sec:method}). Second, using this protocol we show that SALAD's class-wide insertion label makes its map spread to every intact part of the inserted class, explain why with an optimality argument, and confirm the cause by retraining on identical inputs in five categories and from scratch with SALAD's full recipe (\cref{sec:mechanism}). Third, we show that labelling the pasted footprint, which every synthetic edit already provides, more than doubles localization of real pushpin defects and, at fixed operating points, finds more defective compartments while opening fewer intact ones than any policy on the released map (\cref{sec:native}). Finally, we show that valid shams reverse conclusions that fault-only evaluation draws about appearance detectors and about SALAD's full system (\cref{sec:system}).
+
+\section{Related work}
+\label{sec:related}
+MVTec LOCO introduced anomalies that violate constraints on the count, position or combination of otherwise normal parts~\cite{bergmann2022}. Appearance-based detectors such as EfficientAD, PatchCore and Gaussian feature models detect many of them~\cite{batzner2024,roth2022,rippel2021}. Component-based methods segment the scene into parts and compare attributes, histograms or correspondences~\cite{liu2023,kim2024psad,hsieh2024csad,peng2025}, and vision--language and rule-based systems reason about explicit constraints~\cite{jeong2023winclip,zhou2024anomalyclip,zhang2025logsad,ji2026,zhang2026logico}. SALAD adds a composition branch that reads a part map and is trained on synthetic edits of that map~\cite{fucka2025}. Synthetic defects are the common source of localization supervision: cut-and-paste patches, Perlin-masked textures, blended natural patches, generated defects and synthesized logical defects~\cite{li2021cutpaste,zavrtanik2021draem,schluter2022nsa,hu2024anomalydiffusion,zhao2024}. This line of work varies how a synthetic defect looks; we study the spatial extent of its label, and show that it determines where the map points.
+
+Pixel AUROC and per-region overlap summarize a map over all thresholds~\cite{bergmann2021ijcv}, and sPRO saturates each region at a defect-specific area to accommodate ambiguous logical defects~\cite{bergmann2022}. Deployed systems instead fix their cutoffs in advance, often with conformal guarantees on normal data~\cite{bates2023,angelopoulos2023}; we report costs at such operating points in the unit an inspector opens. Our edits follow the logic of minimal pairs, which isolate one factor while holding others fixed, as in contrast sets, counterfactually augmented data and Winoground~\cite{gardner2020contrast,kaushik2020counterfactual,thrush2022}, and of sanity checks that ask whether a map changes when, and only when, its cause changes~\cite{adebayo2018sanity}. Valid shams play this role for anomaly maps, since they alter as many pixels as the fault while respecting the rule.
+
+\section{Method}
+\label{sec:method}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{pipeline.pdf}
+\caption{\textbf{Only the training target changes; everything at test time is fixed in advance.} Training (green) differs only in the insertion target $y$. At test, a part map comes from a U-Net (\emph{re-segmented}) or from the edited label map (\emph{oracle}); the scene cutoff $t_s$ and the compartment cutoff $t_c$ (or list length $k$, or relative cutoff $\alpha$) are fixed on development trays (blue). The tray is test photo 058; the scores are illustrative and match the example under \cref{eq:rc} ($R=2/2$, $C=3$). Network icons created in BioRender.}
+\label{fig:pipeline}
+\end{figure*}
+
+\subsection{Problem setting and matched edits}
+\label{sec:edits}
+A photograph $x_i$ shows a tray of $|\E|=15$ compartments in a $5{\times}3$ grid, and the published rule requires exactly one pin per compartment~\cite{bergmann2022}. A part segmenter maps the photograph to a six-class part map, and SALAD's composition branch returns a score map $S_i\in[0,1]^{256\times256}$ in which higher values indicate anomalies (\cref{fig:pipeline}). For a compartment $e\in\E$, $S_i|_e$ denotes the scores of its pixels.
+
+We use every good pushpin photograph of the MVTec LOCO test split (138) and of the validation split (69). From each we cut out one intact pin whose cutout and halo fit inside its compartment and translate it without resampling, which yields four variants (\cref{fig:teaser}a). The \emph{source} is the unedited photograph. In the \emph{valid sham} the pin moves within its own compartment. In the \emph{fault} it moves by the same displacement into a face-adjacent occupied compartment, leaving its compartment $a_i$ empty and the recipient $b_i$ with two pins. The \emph{vacancy-only} control fills the vacated support exactly as the fault does but inserts nothing. Collisions, divider clearance and background agreement are checked before any model is run. Each variant has a target set $\T_i$ of compartments that require inspection: $\T_i=\{a_i,b_i\}$ for a fault, $\T_i=\{a_i\}$ for a vacancy and $\T_i=\emptyset$ for a source or sham. Comparing the fault with the sham holds the moved part, its displacement and the fill fixed; comparing it with the vacancy holds the empty compartment fixed and isolates the inserted pin.
+
+Every variant is scored through two paths with identical detector weights. On the \emph{oracle} path we apply the same edit to the released part map. On the \emph{re-segmented} path a U-Net trained only on good training photographs segments every variant, including the source, so compositing traces and segmentation errors reach the detector as in deployment. We report the re-segmented path unless stated otherwise.
+
+\subsection{Calibrated inspection queue}
+\label{sec:queue}
+We model the two decisions of an inspector, whether to open a tray and which compartments to check, with cutoffs fixed before testing (\cref{alg:queue}). Writing $p$ for a pixel, a tray raises an alarm when $\max_p S_i(p)>t_s$. Let $M_{(1)}\le\dots\le M_{(69)}$ be the sorted maxima of the 69 unedited validation maps; we set
+\begin{equation}
+ t_s=M_{(63)},\qquad 63=\lceil 0.9\,(69+1)\rceil,
+ \label{eq:ts}
+\end{equation}
+a split-conformal cutoff~\cite{bates2023}: a new normal tray, exchangeable with the validation trays, exceeds $t_s$ with probability at most 10\%. Each compartment receives its maximum score $g_i(e)=\max S_i|_e$, and an alarmed tray yields the queue
+\begin{equation}
+ \Q_i=\{e\in\E:\ g_i(e)\ge t_c\},
+ \label{eq:queue}
+\end{equation}
+while a tray without an alarm opens nothing, $\Q_i=\emptyset$. The compartment cutoff $t_c$ is the highest value that queues 95\% of the targets of the 69 matched \emph{development} faults built from the validation photographs. As alternatives, a \emph{list} queues the $k$ highest-scoring compartments and a \emph{relative} cutoff queues $\{e: g_i(e)\ge\alpha\max_{e'}g_i(e')\}$, with $k$ and $\alpha$ the most selective values that reach the same development recall. Over $n$ faults, the target recall $R$ and the inspection cost $C$ are
+\begin{equation}
+ R=\frac{\sum_i|\Q_i\cap\T_i|}{\sum_i|\T_i|},\qquad
+ C=\frac{1}{n}\sum_{i=1}^n|\Q_i\setminus\T_i|,
+ \label{eq:rc}
+\end{equation}
+\ie, the fraction of target compartments queued and the number of untouched compartments queued per fault (0 to 13). A fault whose queue holds both targets and three other compartments contributes $2/2$ to recall and $3$ to cost. A list exploits the known number of targets, so we also pool relocations (two targets) with vacancies (one target) and refit every parameter on the pooled development trays; these pooled parameters are the ones applied to real defects, whose number of faulty compartments varies.
+
+\begin{algorithm}[t]
+\caption{Calibrated inspection queue}
+\label{alg:queue}
+\begin{algorithmic}[1]
+\Require map model $f$; compartments $\E$; normal validation maps $\mathcal{V}$; development faults $\mathcal{D}$ with targets $\T_j$
+\State $t_s\gets$ 63rd smallest of $\{\max_p f(m_v)(p)\}_{v\in\mathcal{V}}$ \Comment{$|\mathcal{V}|=69$}
+\State $t_c\gets$ highest cutoff queueing 95\% of $\bigcup_{j\in\mathcal{D}}\T_j$ on alarmed trays
+\For{each test tray $i$}
+  \State $S_i\gets f(m_i)$;\ \textbf{if} $\max_p S_i(p)\le t_s$ \textbf{then} $\Q_i\gets\emptyset$
+  \State \textbf{else} $\Q_i\gets\{e\in\E: \max S_i|_e\ge t_c\}$
+\EndFor
+\State \Return $R$ and $C$ from \cref{eq:rc}
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Insertion targets and why class-wide targets spread}
+\label{sec:theory}
+SALAD trains its discriminative U-Net on synthetic edits of training part maps: Perlin-shaped relabeling, relabeling of a connected component, insertion of a rotated component from another map, and relabeling plus insertion~\cite{fucka2025}. For an edited map the network predicts a logit $z_p$ at every pixel $p$ of the pixel set $P$, and a binary target $y\in\{0,1\}^P$ states which pixels should be called anomalous. With the sigmoid focal loss $\mathrm{FL}$~\cite{lin2017focal} ($\alpha=0.25$, $\gamma=2$), the branch minimizes
+\begin{equation}
+ \mathcal{L}=\frac{5}{|P|}\sum_p \mathrm{FL}(z_p,y_p)+\frac{1}{|P|}\sum_p\bigl|\sigma(z_p)-y_p\bigr|,
+ \label{eq:loss}
+\end{equation}
+where $\sigma$ is the logistic function and the weight 5 is that of the released implementation. When a part of class $k$ is inserted with pasted pixels $F$, producing an edited map whose label at $p$ is $l(p)$, the released implementation marks the whole class,
+\begin{equation}
+ y^{\text{cw}}(p)=\mathbb{1}[l(p)=k]\qquad\text{(class-wide)},
+\end{equation}
+whereas the footprint target marks only what was pasted,
+\begin{equation}
+ y^{\text{fp}}(p)=\mathbb{1}[p\in F]\qquad\text{(footprint)}.
+\end{equation}
+Other edits keep their targets in both cases, so $y^{\text{fp}}\le y^{\text{cw}}$ pixel by pixel, and the generator knows $F$ for every edit. In 204 replayed pushpin insertions, the class-wide target covers a median of 16 times the pasted area. For an edited map $m$ and a pixel $p$, let $q(m,p)$ be the probability, under the training distribution of edits, that the target at $p$ is 1.
+
+\begin{proposition}
+\label{prop:optimal}
+Let the pixel loss $\ell(s,y)$ be non-increasing in the score $s$ for $y=1$ and non-decreasing for $y=0$, as are cross-entropy, the focal loss, the L1 loss on $\sigma$ and their sum in \cref{eq:loss}. Then the score minimizing the conditional risk $r(s;q)=q\,\ell(s,1)+(1-q)\,\ell(s,0)$ can be chosen non-decreasing in $q$. Consequently,
+(i) under class-wide targets, every pixel of class $k$ has $q$ at least the posterior probability that the map contains an insertion of class $k$, so when an insertion is evident an optimal head raises all of them; and
+(ii) under footprint targets, if the inserted instance is one of $m$ instances that the map cannot tell apart, its pixels have $q$ at most $1/m$ plus the probability of the other edits.
+\end{proposition}
+\begin{proof}
+$\partial_q\partial_s r=\partial_s\ell(s,1)-\partial_s\ell(s,0)\le0$, so the risk has decreasing differences in $(s,q)$, and Topkis' theorem~\cite{topkis1978} gives a minimizer non-decreasing in $q$. For (i), every class-$k$ pixel of a map with a class-$k$ insertion has $y^{\text{cw}}=1$. For (ii), if $m$ instances are indistinguishable, the posterior probability that a given one was pasted is at most $1/m$.
+\end{proof}
+Part (i) predicts spread whenever an insertion is evident. Part (ii) predicts when footprint targets cannot help: if the task treats instances as interchangeable, footprint targets cap each instance's score, while the task's own annotation may cover all of them.
+
+\section{Experimental setup}
+\label{sec:setup}
+\paragraph{Data.} All data come from MVTec LOCO~\cite{bergmann2022}. Matched edits use the 138 test and 69 validation pushpin photographs (\cref{sec:edits}). For real defects we use the official test splits with pixel annotations: pushpins (91 logical anomalies, 138 good images), breakfast boxes (83, 102), juice bottles (142, 94), splicing connectors (108, 119) and screw bags (137, 122). Pushpin faults are tied to compartments, breakfast-box faults to the content of a compartment, and screw-bag faults to the number of interchangeable parts in an unordered bag.
+
+\paragraph{Retraining on identical inputs.} We use SALAD's released weights and code~\cite{fucka2025}. To change only the insertion target, every comparison trains a class-wide and a footprint arm in one process from the same initialization and feeds both the same prefetched stream of maps, donors and edits, so that their inputs are identical bit for bit. The \emph{continuation} recipe copies the released discriminative U-Net into both arms, freezes the released reconstruction autoencoder and trains 1{,}600 steps of one possibly edited map plus its clean copy, with SALAD's four edit families applied with probability 1/2, \cref{eq:loss}, and Adam at $10^{-5}$ with a tenfold decay at 95\%; we run it in five categories with two seeds. The \emph{from-scratch} recipe trains the whole composition branch, autoencoder and U-Net, from random initialization with SALAD's published 70{,}000-step recipe, for pushpins with two seeds. We fixed its endpoint (cost $C$ on matched faults), guardrails on recall and sham alarms, and a check that the class-wide arm reproduces the released spread before scoring. The supplement reports two further 800-step recipes, one with rule-aware training edits.
+
+\paragraph{Baselines.} The released composition head is the main baseline, read with threshold, list and relative queues; the list and relative queues can partly compensate for poor calibration without retraining. Within each recipe the class-wide arm is the matched control of the footprint arm. EfficientAD with SALAD's released appearance weights~\cite{batzner2024} and our PatchCore~\cite{roth2022} (WideResNet-50, 1\% coreset) read photographs instead of part maps. A detector that applies the published rule to the re-segmented part map is a reference that needs task knowledge a learned detector does not have.
+
+\paragraph{Metrics.} On matched trays we report alarms, $R$ and $C$ (\cref{eq:rc}), and the \emph{spread}: the percentage of untouched compartments in which the map changes by at least 0.5 when the edit is applied. As a threshold-free counterpart of sPRO we also integrate compartment recall up to a false-compartment rate of 0.05 (\emph{region area}), with untouched compartments of faulty trays as negatives (\emph{fault}) or with source and sham compartments added (\emph{all}). On real defects we report AU-sPRO up to a 5\% false-positive rate, re-implemented from the official rules at map resolution; on four pushpin heads the unmodified official code agrees with our values to within 0.7 points. At fixed operating points on real pushpin defects, a compartment is a target when its annotation covers at least 20 pixels, and the scene cutoff and pooled queue parameters are those fixed on development trays. A paired difference ``$+x$ [$a$, $b$]'' is the difference between two heads with its 95\% bootstrap interval over original photographs with all their edits (4{,}000 draws) or over test images (2{,}000 draws), every head evaluated on the same draws.
+
+\section{Results}
+\label{sec:results}
+\begin{table*}[t]
+\centering
+\caption{\textbf{SALAD's full recipe from random initialization} (pushpins). Matched trays: spread (\%), cost $C$ and target recall $R$ (\%) at the development-fixed threshold, and pooled $C$. Real defects: AU-sPRO up to 5\% FPR, overall and on extra pins (\%), defective compartments found (\%) and intact compartments opened per faulty tray at the development-fixed operating point, and image AUROC (\%). Bold: best retrained head.}
+\label{tab:replication}
+\small\setlength{\tabcolsep}{5pt}
+\input{tables/replication.tex}
+\end{table*}
+
+\subsection{Footprint targets on real defects}
+\label{sec:native}
+\Cref{tab:replication} gives our main result. Trained from scratch with SALAD's full recipe, the class-wide arms behave like the released head on matched trays, opening \scrThrWCW{} intact compartments per fault at the 95\% threshold. The footprint arms open \scrThrWFP{} (paired differences \scrDThrW), which is also below the released map's best list (\relListW). On the 91 real logical pushpin defects their AU-sPRO is \scrSproFP\% against \scrSproCW\% for the class-wide twins (\scrGain{} points), and on extra pins it rises from about 24\% to 84--90\%.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{native_results.pdf}
+\caption{\textbf{Real pushpin defects.} (a)~sPRO against false-positive rate for the released head and the 1.6k-step continuations (dashed: seed 2). (b)~Defective compartments found against intact compartments opened per faulty tray, at the scene cutoff and pooled queue fixed on development trays; hollow: seed 2; whiskers: 95\% intervals over test images.}
+\label{fig:native}
+\end{figure}
+
+The operating points answer the question an inspector asks (\cref{fig:native}b). With cutoffs fixed on development trays, the from-scratch footprint heads find \scrOpR\% of the defective compartments while opening \scrOpW{} intact compartments per faulty tray. The released threshold finds \opRelThrR\% and opens \opRelThrW; its top-three list opens only \opRelListW{} but finds \opRelListR\%. Against this list, the strongest policy on the released map, the footprint heads find \scrVsListR{} points more defective compartments and open \scrVsListW{} fewer intact ones, in both seeds. The class-wide twins find nearly as many compartments but open 5--6 intact ones. Image AUROC shows no consistent cost (\scrAucFP\% against \scrAucCW\%). Two costs remain. At the development scene cutoff the footprint heads alarm on \scrShamFP{} of 138 valid shams against \scrSrcFP{} unedited sources, and in seed 1 the class-wide arm spreads less than the released head (25.4\%) and fails our reproduction check, so that seed's comparison is weaker evidence about the released label.
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Localization of real logical defects} (AU-sPRO up to 5\% FPR, \%). Class-wide and footprint heads continue the released head for 1.6k steps on identical inputs; the last two columns are paired differences with 95\% bootstrap intervals. Bold: best head in each row.}
+\label{tab:native}
+\small\setlength{\tabcolsep}{4.6pt}
+\input{tables/native.tex}
+\end{table*}
+
+The gain does not depend on the recipe. \Cref{tab:native} repeats the comparison with 1.6k-step continuations in five categories. On pushpins footprint targets raise AU-sPRO from \ppCW\% to \ppFP\% (\ppGain{} points), and across all six matched pushpin pairs from three recipes footprint targets reach \sixFP\% and class-wide targets \sixCW\%. The gain is largest where \cref{prop:optimal}(i) predicts it: on extra pins, where a class-wide map lights up every pin, AU-sPRO rises by \ppAddGain{} points. Missing pins and separators improve as well, because a vacated region turns into tray floor and a class-wide target for inserted floor covers the entire floor (examples in the supplement). Breakfast boxes improve from \bbCW\% to \bbFP\%, driven by missing cereals (\bbCerealCW\% to \bbCerealFP\%), a fault confined to one compartment. In juice bottles, whose labels and liquid are single instances, the class channel and the footprint nearly coincide and AU-sPRO is unchanged (\jbGain{} points); splicing connectors show no consistent change (\scGain{} points). The short continuations do not, however, beat the released list on cost: their thresholds find \opFPR\% of defective compartments but open \opFPW{} intact ones (\cref{fig:native}b), and image AUROC drops from \aucRel\% to \aucFP\%. Full training is what makes the footprint detector cheaper to inspect.
+
+\subsection{The mechanism on matched trays}
+\label{sec:mechanism}
+\begin{table*}[t]
+\centering
+\caption{\textbf{Matched pushpin trays} (re-segmented path, 138 photographs). Alarms out of 138; spread in \%; $C$ is untouched compartments queued per fault and $R$ target recall (\%) at the development-fixed threshold or list; pooled $C$ mixes relocations and vacancies; region area (\%) with faulty-tray negatives only or with source and sham compartments added. SALAD class-wide and footprint heads are 1.6k-step continuations. Bold: best SALAD head; the rule needs task knowledge.}
+\label{tab:matched}
+\small\setlength{\tabcolsep}{4.2pt}
+\input{tables/main.tex}
+\end{table*}
+
+The matched trays show why the released map is expensive to inspect. The released head alarms on all \relFaults{} faults, scores every fault above its valid sham, and ranks the targets at \relAUCx\% compartment AUROC (\cref{tab:matched}). Its threshold nevertheless queues \relThrW{} of the 13 untouched compartments per fault, and the controls locate the cause (\cref{fig:spread}a). After a relocation \relAnyFaultX\% of untouched compartments change by at least 0.5; after the vacancy-only control, which empties the same compartment, \relAnyVacX\%; after the valid sham, which moves the same pin the same distance, \relAnyShamX\%. The response follows the inserted pin. An insertion probe on part maps shows that it follows the inserted class (\cref{fig:spread}b): one extra pin changes \ppAny\% of the untouched pins and an extra screw, nut or washer \sbAny\% of the untouched parts, while other classes stay still.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{spread.pdf}
+\caption{\textbf{Spread.} (a)~Untouched compartments whose re-segmented map changes by more than a cutoff after each matched edit, with 95\% bands; class-wide and footprint heads are trained from scratch (class-wide: seed 2, which reproduces the released head). (b)~Untouched instances of the inserted class that change by at least 0.5 after one extra instance is pasted into a part map (1.6k-step continuations; bars: seed means, dots: seeds with 95\% intervals).}
+\label{fig:spread}
+\end{figure}
+
+Footprint targets remove the spread. From scratch, untouched compartments affected by a relocation fall from \scrSpreadCW\% to \scrSpreadFP\%; in the continuations from \cwSpread\% to \fpSpread\% (paired reductions of \dSpread{} points). In the insertion probe the affected pins fall from \insPPCW\% to \insPPFP\%, and the affected screw-bag parts from \insSBCW\% to \insSBFP\%. The continuations leave the targets less separated than full training (both targets in the top three on \fpTopThree\% of faults), so on matched relocations their threshold (\fpThrW) stays costlier than the released list (\relListW), mirroring the real-defect result above.
+
+\subsection{When the faulty location is ambiguous}
+\label{sec:ambiguous}
+Screw bags are SALAD's motivating case. The rule counts interchangeable screws, nuts and washers, and MVTec LOCO annotates them accordingly: for an extra nut the annotation covers every nut in the bag and saturates once one is found, whereas for an extra pushpin it covers only the pins in the overfilled compartment. \Cref{prop:optimal}(ii) predicts that footprint targets cannot help here, and they do not: AU-sPRO is \sbFP\% against \sbCW\% (\sbGain{} points), and on extra parts every head localizes poorly, the footprint heads lowest (\sbExtraFP\% against \sbExtraCW\%). The mechanism is unchanged, since footprint targets still remove the same-class spread in screw bags (\cref{fig:spread}b). What changes is the task's own definition of where the fault is, and the target should follow it.
+
+\subsection{What matched shams reveal}
+\label{sec:system}
+EfficientAD and PatchCore read photographs rather than part maps. Judged on faulty trays alone, they localize the targets better than SALAD's composition head: their fault-only region areas are \eadRegFault\% and \pcRegFault\% against \relRegFault\%, and EfficientAD's threshold queues only \eadThrW{} untouched compartments (\cref{tab:matched}). The valid shams reverse this picture. EfficientAD alarms on \eadSham{} and PatchCore on \pcSham{} of 138 shams, against \eadSrc{} and \pcSrc{} unedited sources, and both queue the sham's edited compartment; counting source and sham compartments as negatives reverses the ranking (\eadRegAll\% and \pcRegAll\% against \relRegAll\%). These maps find where pixels were composited, which on faulty trays coincides with the targets, and a fault-only evaluation, including sPRO on edited images, cannot separate the two. The same test exposes SALAD's full system, which sums the composition score with EfficientAD and a global Gaussian branch~\cite{fucka2025,rippel2021} and reaches 100\% logical AUROC on native pushpins. With SALAD's validation-based normalization and a 10\% cutoff, the fused score alarms on \fullSrcVal{} of 138 unedited test trays, because the Gaussian branch's normalized score shifts from near zero on validation to 2.7 on test trays. Refitting the cutoff on held-out normal test trays restores \fullSrcX{} source alarms, yet the fused score still alarms on \fullShamX{} valid shams because the appearance branch fires on the composite (supplement).
+
+\section{Conclusion}
+\label{sec:conclusion}
+We asked why a logical anomaly detector that flags every faulty tray can still send an inspector to almost every compartment. Matched valid and invalid edits answered this for SALAD: labelling a synthetic insertion over its whole class teaches the map to light up every part of that class, as \cref{prop:optimal} predicts and identical-input retraining confirms. Labelling only the pasted footprint removes this spread. Trained from scratch, the footprint detector finds more defective compartments on real pushpin trays while opening fewer intact ones than any policy on the released map; it improves breakfast boxes and leaves juice bottles and splicing connectors unchanged. The change needs no new information, because every synthetic edit already knows its footprint. Screw bags mark the boundary: where the task treats instances as interchangeable and annotates all of them, the class-wide target is the better match. The spatial extent of a synthetic label is therefore part of the task specification, and matched edits with valid shams make that choice measurable in the unit an inspector pays.
+
+Our evidence has limits. The matched edits are composites of real photographs and cover one kind of fault. The from-scratch comparison covers pushpins with two seeds, one of whose class-wide arms does not reproduce the released spread, and its footprint heads raise valid-sham alarms at the development scene cutoff. Short continuations lower pushpin image AUROC and do not beat the released list on cost. We study one detector family, because the intervention requires localization learned from labelled insertions, and our AU-sPRO re-implements the official rules at map resolution. Promising directions are targets whose extent follows each class's annotation semantics, set-valued targets for interchangeable parts, the same intervention in other detectors trained on synthetic insertions, and physical rearrangements without compositing.
 
 \section*{LLM usage statement}
-OpenAI Codex and Anthropic Claude were used to implement and run the experiments, check data and code provenance, generate figures and tables from saved outputs, and draft and edit the text. Every reported number is produced from saved outputs by scripts in the supplementary package.
+OpenAI Codex and Anthropic Claude were used to implement and run the experiments, check data and code provenance, generate figures and tables from saved outputs, and draft and edit the text; the authors checked every claim against the saved outputs. The tray and network illustrations were drafted with BioRender's AI figure tool and relabelled by the authors.
 
 {
     \small

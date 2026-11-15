@@ -1,0 +1,28 @@
+\label{sec:supp_edits}
+The asset mirror retains the official LOCO directory names and RGB photographs. We freeze 372 train/good, 69 validation/good and 138 test/good source identities and fingerprint each image. Training images are split by hash into 302 fitting and 70 inner development images. The visual holdout divides into 63 and 75 test sources by a separate hash. No test score or activation enters candidate selection. The authors' released maps determine the five-column, three-row tray geometry. On the 256-square grid we use $x=(8,57,105,153,201,249)$ and $y=(13,91,166,241)$. Retained pin labels are eight-connected class-2 components of at least 75 pixels. A qualifying source has one per cell. This filter is specific to the compartment experiment.
+
+The RGB cutout is the pin-class component with the neighboring bright pixels from a two-pixel halo, with enclosed holes filled. Selection requires cell clearance and an available local dark background. We fill the original position with the per-channel median of the local dark class-4 ring. Destinations have a one-pixel cell margin, zero overlap with the source cutout or other pins, and at least a two-pixel pin clearance. The oracle component moves entirely onto class 4. The two translations have the same integer squared displacement and equal paste area. The displacement range and intensity thresholds were fixed on validation photographs. In test the moves range from 19.2 to 51.4 pixels. All 138 candidate images meet the edit rules. Sham and fault change exactly the same number of decoded RGB pixels in each pair. Source-pixel repaint is exact. All test masks retain the same class histogram for source, sham and fault. Each move preserves the pin-class component count. All four RGB arms use original camera backgrounds. The held-out scenes contain no generated textures or objects.
+
+The RGB-only extractor is a two-level U-Net with widths 16, 32 and 64, SiLU, group normalization, max pooling and nearest-neighbor upsampling. It predicts six channels. The training label is the released map for each train/good photograph. Weighting is inverse square-root class frequency with floor 0.01. AdamW runs with seed 74817, learning rate $0.001$, decay $0.001$, batch size 12, and at most 30 epochs, selecting the lowest weighted loss on the 70 inner development images. The selected epoch is 30. Development pin IoU is 97.3\% against the released labels and all 70 development images have the correct retained cell counts. On held-out fault maps, pin IoU against the intervened oracle maps is 97.2\%. We keep extraction discrepancies in the test denominator. The extracted arm has its own validation cutoff. Its comparison with the oracle arm includes the effect of re-segmentation and recalibration.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=.75\textwidth]{collateral.pdf}
+\caption{\textbf{Spread of the released map across the change range.} For each relocation, vacancy-only edit and valid sham we use the same 13 compartments outside the two targets; a compartment counts if at least one pixel changes by more than the cutoff. Bands: 95\% intervals over original photographs.}
+\label{fig:collateral}
+\end{figure*}
+
+\paragraph{Reference regions and scene operation.}
+The two affected cells are a rule-based coarse spatial reference. The vacant and occupied cells need no pixel-level anomaly outline. For each cell we take the maximum of either the edited output or the absolute change from source. Even the change-based cell rank is 98.4\% on oracle maps while 90.3\% of untouched cells have a large absolute change. The matched deletion, which leaves the same vacancy, keeps changes above $0.5$ to 2.9\% of those same untouched cells. The paired difference is 87.4 points [82.4, 91.9] for oracle maps and 86.6 [81.4, 91.2] after extraction. \Cref{fig:collateral} shows the full threshold curve. These are changes in the spatial output, whereas scene-level maxima and cutoff decisions are a separate measurement.
+
+The image score is the official maximum sigmoid output. The validation IQRs are 0.00974 (oracle) and 0.01060 (extracted). The raw cutoffs are 0.15802 and 0.17097. The rule comparator sums the absolute deviation from one pin per cell and adds retained out-of-grid pins. Its cutoff is zero on both paths. The comparator uses the same labels and the same validation rule. On re-extracted maps it yields zero sham alerts (exact 95\% upper bound 2.6\%), while retaining all 138 fault alerts. \Cref{tab:halves} reports the held-out halves and the paired effect. Figure selection uses the case closest to the median oracle fault-minus-sham score. There were zero missed faults. The second row uses the first hash-ordered alerted sham, whose source also alerts.
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Held-out halves for the SALAD photo intervention.} Sham, Fault and Del. count alerts. All fault and deletion recalls are 100\% on the respective support. Bootstrap intervals for tied all-success contrasts are conditional on the sample.}
+\label{tab:halves}
+\scriptsize
+\setlength{\tabcolsep}{3.3pt}
+\input{tables/visual_halves.tex}
+\end{table*}
+

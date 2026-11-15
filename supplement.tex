@@ -6,40 +6,44 @@
 \def\confName{CVPR}
 \def\confYear{2027}
 \input{tables/numbers}
-\graphicspath{{figures/}}
-\title{Right Alarm, Wrong Places:\\Footprint Labels Fix Where Logical Anomaly Maps Point}
+\title{Same Parts, Different Arrangements\\Matched Edits for Budgeted Anomaly Inspection}
 \author{Anonymous CVPR submission}
 \begin{document}
 \maketitlesupplementary
 
-\noindent Part A documents every analysis in the main paper. Part B preserves the record of the earlier rounds of this study: short fine-tunes of the released head, the juice-bottle label rule, and the graph audit that motivated the matched-edit design. All tables are generated from saved outputs by the scripts in the package.
+\noindent This supplement documents every analysis in the main paper: the order in which analyses were fixed, inspection definitions, training recipes, the real-defect evaluation, the appearance detectors and SALAD's full system, the construction of the matched edits, and the 800-step fine-tunes that form the third recipe of the main paper. All tables are generated from saved outputs by the scripts in the package.
 
-\section*{Part A: analyses in the main paper}
 \input{sec/supp_a}
 
-\section*{Part B: record of earlier rounds}
-\section{Short fine-tunes of the released head}
-These experiments preceded the identical-input continuations of the main paper. They adapt the released composition U-Net for 800 steps with the reconstruction autoencoder frozen, either on SALAD's own edit families (``original edits'') or with an added rule-aware training variant (``rule-aware''), and compare class-wide with footprint insertion targets inside each recipe. \Cref{tab:factorial} summarizes the resulting $2{\times}2$ design.
+\section{Edit construction}
+\input{sections/edit_details.tex}
+
+\section{800-step fine-tunes of the released head}
+\label{sec:supp_ft800}
+These fine-tunes adapt the released composition U-Net for 800 steps with the reconstruction autoencoder frozen, either on SALAD's own edit families (``upstream-only'') or with an added rule-aware training edit (``rule-aware''), and compare class-wide with footprint insertion targets inside each recipe. They give four of the six matched pushpin pairs of the main paper. \Cref{tab:factorial} summarizes the resulting $2{\times}2$ design.
 \begin{table*}[t]
 \centering
-\caption{Training recipe $\times$ insertion label in 800-step fine-tunes of the released head (matched trays, re-segmented path; same columns as the main matched-tray table). Development cell AUROC below 90\% fails the locked competence check ($^\dagger$).}
+\caption{Training recipe $\times$ insertion target in 800-step fine-tunes of the released head (matched trays, re-segmented path; same columns as the main matched-tray table). Development compartment AUROC below 90\% fails the pre-specified competence check ($^\dagger$).}
 \label{tab:factorial}
 \footnotesize\setlength{\tabcolsep}{3pt}
 \input{tables/factorial.tex}
 \end{table*}
 \input{sections/v3_finetunes.tex}
 
-\section{Full fusion and the juice-bottle rule}
+\section{SALAD's full system and the juice-bottle rule}
+\label{sec:supp_fusion}
+\begin{table}[t]
+\centering
+\caption{SALAD's full system on matched pushpin trays (re-segmented path; alarms out of 138). Native: logical AUROC (\%). The validation cutoff uses SALAD's validation-based normalization with our 10\% split-conformal cutoff; the normal-test cutoff is refit on one half of the unedited test trays and applied to the other.}
+\label{tab:system}
+\small\setlength{\tabcolsep}{1.9pt}
+\input{tables/system.tex}
+\end{table}
+\Cref{tab:system} gives the branch-level alarms behind the full-system paragraph of the main paper.
 \input{sections/v3_full_juice.tex}
 
-\section{Graph audit}
-\input{sections/v3_graph_refit.tex}
-\input{sections/v3_earlier_record.tex}
-
-\input{sections/v3_data_use.tex}
-
 \section*{LLM usage statement}
-OpenAI Codex and Anthropic Claude were used to implement and run the experiments, check data and code provenance, generate figures and tables from saved outputs, and draft and edit the text. Every reported number is produced from saved outputs by scripts in the supplementary package.
+OpenAI Codex and Anthropic Claude were used to implement and run the experiments, check data and code provenance, generate figures and tables from saved outputs, and draft and edit the text; the authors checked every claim against the saved outputs. The tray and network illustrations were drafted with BioRender's AI figure tool and relabelled by the authors.
 
 {\small
 \bibliographystyle{ieeenat_fullname}
