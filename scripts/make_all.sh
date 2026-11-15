@@ -1,8 +1,9 @@
-#!/bin/sh
-# Rebuild every figure and both PDFs. Data figures read only data/ (copied from results_export/figure_data).
-set -e
+#!/usr/bin/env bash
+# Rebuild every figure and both PDFs.
+set -euo pipefail
 cd "$(dirname "$0")/.."
-python3 scripts/fig_schematic.py      # Fig. 1 (teaser) and Fig. 2 (pipeline)
-python3 scripts/fig_results.py        # spread, native_results, supplementary collateral
-latexmk -pdf main.tex
-latexmk -pdf supplement.tex
+python3 -I scripts/recover_vector.py figures/orig
+python3 -I scripts/fig_schematic.py
+python3 -I scripts/fig_results.py
+python3 -I scripts/fig_supplement.py
+latexmk -pdf -interaction=nonstopmode main.tex supplement.tex

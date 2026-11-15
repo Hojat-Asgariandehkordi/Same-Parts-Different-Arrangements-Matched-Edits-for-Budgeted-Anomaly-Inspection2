@@ -5,8 +5,7 @@ BioRender art used (all labels are typeset here in Times):
                                  (drawn 3 wide x 5 tall; each tray is rotated 90 deg to the real 5x3 layout)
   figures/biorender/sprites.jpg  pushpin sprite, https://app.biorender.com/illustrations/34d915d6560d8c96482046fe
   figures/biorender/pipeline.jpg network-block icons, https://app.biorender.com/illustrations/d6cd7a9c81d719adaeed28c0
-Fig. 2 uses the saved 256x256 composite of test photo 058 (data/compartment_grid.csv
-gives the compartment edges). Trays in Fig. 1(b) and Fig. 2 are drawn in code with the sprite so that the
+Trays in Fig. 1(b) and Fig. 2 are drawn in code with the sprite so that the
 5x3 compartment count and the moved pins are exact.
 Run: python -I scripts/fig_schematic.py
 """
@@ -17,6 +16,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import data as D  # noqa: E402
 import style  # noqa: E402
 
 style.setup()
@@ -225,33 +225,24 @@ def part_map_from_photo(photo):
     return out
 
 
-def grid_fracs():
-    """Compartment edges of the 256 x 256 maps (from the code export), as fractions."""
-    import csv
-    rows = list(csv.DictReader(open(style.FIG.parent / "data" / "compartment_grid.csv")))
-    xs = sorted({int(r["x0"]) for r in rows} | {int(r["x1"]) for r in rows})
-    ys = sorted({int(r["y0"]) for r in rows} | {int(r["y1"]) for r in rows})
-    return [x / 256 for x in xs], [y / 256 for y in ys]
-
-
 def pipeline():
     W, H = style.FULL, 2.45
     fig, ax = canvas(W, H)
-    photo = np.asarray(Image.open(style.FIG / "assets" / "058_fault.png").convert("RGB"))
-    gx, gy = grid_fracs()
-    vac, rec = (2, 2), (3, 2)      # photo 058: compartment 12 vacated, 13 receives the pin
+    photo = np.asarray(Image.open(style.FIG / "assets" / "pushpin_intervention_2.png").convert("RGB"))
+    row = D.PHOTO_ROWS[0]
+    vac, rec = row["src"], row["dst"]
     iw = 0.86
-    yb = 0.55
+    yb = 0.55   # bottom lane baseline
 
     # ---- training lane (top) --------------------------------------------
     ax.add_patch(FancyBboxPatch((0.03, 1.53), 3.62, 0.88, boxstyle="round,pad=0,rounding_size=0.05",
                                 fc="#eef6f2", ec=C["train"], lw=0.8, zorder=0))
-    ax.text(0.1, 2.37, "Training: only the insertion target $y$ changes", fontsize=8, fontweight="bold",
+    ax.text(0.1, 2.37, "Training: only the target mask $y$ changes", fontsize=8, fontweight="bold",
             color=C["train"], va="top")
     tr = layout("fault")
     w0 = 0.78
     h0 = tray(ax, 0.18, 1.65, w0, tr, fill={k: 0.08 for k in POSE})
-    ax.text(0.18 + w0 / 2, 1.63, "synthetic insertion", fontsize=7.5, ha="center", va="top")
+    ax.text(0.18 + w0 / 2, 1.63, "synthetic edit", fontsize=7.5, ha="center", va="top")
     arrow(ax, (1.0, 1.65 + h0 / 2), (1.2, 1.65 + h0 / 2))
     ww = 0.58
     for k, (nm, broad) in enumerate((("class-wide", True), ("footprint", False))):
@@ -265,55 +256,57 @@ def pipeline():
                 color=C["classwide"] if broad else C["footprint"], fontweight="bold")
     ax.text(1.24 + 0.58 + 0.12, 1.79 + hh / 2, "or", fontsize=7.5, ha="center", va="center")
     arrow(ax, (2.68, 1.65 + h0 / 2), (2.88, 1.65 + h0 / 2))
-    ax.text(3.27, 1.97, "same inputs,\n1.6k steps or\n70k from scratch", fontsize=7, ha="center", va="center",
-            linespacing=1.0)
+    ax.text(3.27, 1.97, "loss (Eq. 4),\n800 steps", fontsize=7.5, ha="center", va="center", linespacing=1.0)
 
     # ---- calibration box (top right) ------------------------------------
     ax.add_patch(FancyBboxPatch((3.78, 1.53), 3.06, 0.88, boxstyle="round,pad=0,rounding_size=0.05",
                                 fc="#eef1f8", ec=C["calib"], lw=0.8, zorder=0))
-    ax.text(3.86, 2.37, "Fixed on development trays (never on test)", fontsize=8, fontweight="bold",
+    ax.text(3.86, 2.37, "Fixed on development data (never on test)", fontsize=8, fontweight="bold",
             color=C["calib"], va="top")
-    ax.text(3.86, 2.17, "$t_s$: 63rd smallest maximum of 69 normal trays\n"
-                       "      (nominal 10% false alarms)\n"
-                       "$t_c$ (or $k$, $\\alpha$): most selective value reaching\n"
-                       "      95% target recall on the development faults",
+    ax.text(3.86, 2.17, "$t_s$: 63rd smallest maximum of 69 normal photos\n"
+                       "      ($\\leq$10% of normal trays raise an alarm)\n"
+                       "$t_c$: highest cutoff that finds 95% of the\n"
+                       "      targets of 69 matched development faults",
             fontsize=7.5, va="top", linespacing=1.15)
 
     # ---- test lane (bottom) ---------------------------------------------
+    ax.text(0.06, 1.42, "Test-time inspection", fontsize=8, fontweight="bold", va="top")
     x = 0.06
-    iw = 0.80
     ph = place(ax, photo, x, yb, iw)
-    iw = 0.86
     for (c, r), ls in ((vac, (0, (2, 1.2))), (rec, "-")):
-        ax.add_patch(Rectangle((x + gx[c] * iw, yb + ph * (1 - gy[r + 1])), (gx[c + 1] - gx[c]) * iw,
-                               (gy[r + 1] - gy[r]) * ph, fc="none", ec=C["target"], lw=1.1, ls=ls, zorder=6))
-    label(ax, x + iw / 2, yb - 0.05, "tray $i$ (a fault)", "matched edit or real defect")
+        X0, X1 = D.PHOTO_X[c], D.PHOTO_X[c + 1]
+        Y0, Y1 = D.PHOTO_Y[r], D.PHOTO_Y[r + 1]
+        ax.add_patch(Rectangle((x + X0 * iw, yb + ph * (1 - Y1)), (X1 - X0) * iw, (Y1 - Y0) * ph,
+                               fc="none", ec=C["target"], lw=1.1, ls=ls, zorder=6))
+    label(ax, x + iw / 2, yb - 0.05, "photo $x_i$ (a fault)", "held-out, edited")
     arrow(ax, (x + iw + 0.03, yb + ph / 2), (x + iw + 0.15, yb + ph / 2))
     un1 = icon((190, 255, 262, 335))
     x = x + iw + 0.17
     place(ax, un1, x, yb + 0.02, 0.33)
-    label(ax, x + 0.17, yb - 0.05, "U-Net", "segmenter")
+    label(ax, x + 0.17, yb - 0.05, "U-Net", "extractor")
     arrow(ax, (x + 0.36, yb + ph / 2), (x + 0.48, yb + ph / 2))
     x = x + 0.5
     pmap = part_map_from_photo(photo)
     place(ax, pmap, x, yb, iw)
-    label(ax, x + iw / 2, yb - 0.05, "part map")
+    label(ax, x + iw / 2, yb - 0.05, "part map $m_i$")
+    # oracle bypass
     arrow(ax, (x - 0.02, yb - 0.38), (x + 0.06, yb + 0.04), ls=(0, (3, 2)), color="#666666")
-    ax.text(x - 1.35, yb - 0.46, "oracle path: the same edit applied to the released part map",
+    ax.text(x - 1.35, yb - 0.46, "oracle: same edit applied to the released label map",
             fontsize=7, va="center", ha="left", color="#555555")
     arrow(ax, (x + iw + 0.03, yb + ph / 2), (x + iw + 0.15, yb + ph / 2))
     un2 = icon((437, 255, 510, 335))
     x = x + iw + 0.17
     place(ax, un2, x, yb + 0.02, 0.33)
     ax.add_patch(Rectangle((x - 0.04, yb - 0.01), 0.41, 0.46, fc="none", ec=C["train"], lw=1.0, zorder=4))
-    label(ax, x + 0.17, yb - 0.05, "composition", "head")
+    label(ax, x + 0.17, yb - 0.05, "composition", "branch $f$")
     arrow(ax, (x + 0.17, 1.53), (x + 0.17, yb + 0.47), color=C["train"], lw=1.0)
-    ax.text(x + 0.22, 1.45, "trained\nweights", fontsize=7, color=C["train"], va="top", linespacing=1.0)
+    ax.text(x + 0.22, 1.45, "fine-tuned\nweights", fontsize=7, color=C["train"], va="top", linespacing=1.0)
     arrow(ax, (x + 0.38, yb + ph / 2), (x + 0.5, yb + ph / 2))
     x = x + 0.52
+    # running-example compartment scores: 2 targets + 3 untouched above t_c (the Eq. 3 example)
     vals = {k: 0.12 + 0.08 * ((k[0] * 5 + k[1] * 3) % 4) for k in POSE}
     vals[vac], vals[rec] = 0.97, 0.93
-    for k, v in zip(((1, 0), (1, 1), (3, 1)), (0.74, 0.69, 0.66)):
+    for k, v in zip(((1, 0), (1, 1), (3, 2)), (0.74, 0.69, 0.66)):
         vals[k] = v
     tc = 0.6
     gw = 0.86
@@ -324,6 +317,7 @@ def pipeline():
                 va="center", color="black" if v >= 0.5 else "white", zorder=10)
     label(ax, x + gw / 2, yb - 0.05, "compartment scores", "$g_i(e)$ = max of $S_i$ in $e$")
     arrow(ax, (x + gw + 0.03, yb + gh / 2), (x + gw + 0.13, yb + gh / 2))
+    # gate diamond
     x = x + gw + 0.15
     dw, dh = 0.5, 0.42
     cy = yb + gh / 2
@@ -333,19 +327,21 @@ def pipeline():
             linespacing=1.0, zorder=4)
     arrow(ax, (x + dw / 2, cy - dh / 2), (x + dw / 2, yb - 0.3), color=C["alarm"])
     ax.text(x + dw / 2 + 0.04, cy - dh / 2 - 0.02, "no", fontsize=7, color=C["alarm"], va="top")
-    ax.text(x + dw / 2, yb - 0.33, "$Q_i=\\varnothing$: tray not\nopened", fontsize=7,
+    ax.text(x + dw / 2, yb - 0.33, "$Q_i=\\varnothing$: tray not\nopened, targets missed", fontsize=7,
             ha="center", va="top", color=C["alarm"], linespacing=1.0)
     arrow(ax, (x + dw, cy), (x + dw + 0.15, cy), color=C["alarm"])
     ax.text(x + dw + 0.02, cy + 0.03, "yes", fontsize=7, color=C["alarm"], va="bottom")
+    # queue
     x = x + dw + 0.17
     out = {vac: (C["target"], (0, (2.2, 1.4))), rec: (C["target"], "-")}
     for k, v in vals.items():
         if k not in out and v >= tc:
             out[k] = (C["queued"], "-")
     tray(ax, x, yb, gw, {}, fill={k: 0.92 for k in vals}, outline=out)
-    label(ax, x + gw / 2, yb - 0.05, r"queue $Q_i=\{e: g_i(e)\geq t_c\}$", "(or top-$k$ list, relative)")
-    ax.text(x + gw / 2, yb - 0.36, "$R$ = 2/2,  $C$ = 3", fontsize=7.5, ha="center", va="top",
+    label(ax, x + gw / 2, yb - 0.05, r"queue $Q_i=\{e: g_i(e)\geq t_c\}$")
+    ax.text(x + gw / 2, yb - 0.21, "$R$ = 2/2,  $C$ = 3 untouched", fontsize=7.5, ha="center", va="top",
             color=C["queued"])
+    # dashed calibration arrows
     arrow(ax, (5.0, 1.53), (x - dw / 2 - 0.15, cy + dh / 2 + 0.02), ls=(0, (3, 2)), color=C["calib"])
     arrow(ax, (6.2, 1.53), (x + gw / 2, yb + gh + 0.03), ls=(0, (3, 2)), color=C["calib"])
     style.save(fig, "pipeline")
