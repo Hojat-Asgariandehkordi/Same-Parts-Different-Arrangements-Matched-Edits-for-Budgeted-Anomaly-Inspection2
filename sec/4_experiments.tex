@@ -1,0 +1,93 @@
+\section{Experiments}
+\label{sec:results}
+\paragraph{Implementation details.}
+Each fine-tune starts from the released SALAD composition weights with the reconstruction autoencoder frozen. A batch contains two clean maps, one SALAD-style synthetic edit and one rule-aware edit (a relocation, sham or vacancy) built from the official training photographs. We train for 800 Adam steps and keep the final checkpoint, using two seeds. Within a seed, the two policies receive identical inputs, edits, optimization steps, loss weights and pixel weights, and differ only in $y$. Two further recipes, used in \cref{sec:scratch,sec:native}, train both arms in one process on the same prefetched stream of SALAD edits (no rule-aware edits): a \emph{from-scratch} recipe that trains the whole composition branch from random initialization with SALAD's published 70{,}000 steps (pushpins, two seeds), and a 1.6k-step \emph{continuation} of the released head in five categories. Further details are given in the supplementary material.
+
+\subsection{Diagnosis of the released model}
+\label{sec:released}
+The released composition branch raises an alarm on all 138 faults and all 138 vacancies under both interfaces, and scores every fault above its matched sham (138/138; exact 95\% interval 97.4--100\%). On oracle maps, the AUROC of the affected compartments rises from 48.6\% on the source, which is chance level, to 98.2\% after the fault. The ranking is also accurate: on extracted maps, both targets are among the two highest-scoring compartments for 77.5\% of faults and among the three highest for 94.2\%, and the second target appears at rank 2.43 on average. Scoring compartments by their 99th percentile instead of their maximum raises the top-2 rate to 87.0\% ($+9.4$ percentage points, pp, 95\% interval [4.3, 14.5]) with the same alarm and weights.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Pushpin inspection on extracted maps} (138 test photos). Every row raises an alarm on all 138 faults and 138 vacancies. \emph{Sham}: valid shams with an alarm. \emph{Top 2}: both targets in the two highest compartments. \emph{2nd}: mean rank of the second target. $R$ and $C$ use the 95\% development cutoff (\cref{eq:rc}). \emph{Area}: region area at false-compartment rate $\le0.05$, in percent. Oracle maps are in the supplement.}
+\label{tab:inspection}
+\footnotesize
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Map, compartment score & Sham & Top 2 & 2nd & $R$ (\%) & $C$ & Area \\
+\midrule
+Released, max          & 7  & 77.5 & 2.43  & 95.7 & 11.07 & 81.6 \\
+Released, 99th pct.    & 7  & 87.0 & 2.32  & 96.0 & 11.41 & 77.3 \\
+\midrule
+Class-wide, seed 1     & 19 & 0.0  & 15.00 & 97.1 & 13.00 & 39.3 \\
+Footprint, seed 1      & 9  & 87.7 & 2.13  & 95.3 & \textbf{0.20} & \textbf{96.3} \\
+\midrule
+Class-wide, seed 2     & 22 & 0.0  & 15.00 & 96.4 & 13.00 & 39.4 \\
+Footprint, seed 2      & 20 & 74.6 & 2.28  & 96.0 & \textbf{0.45} & 89.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Good ranking does not, however, translate into a short queue. At the 95\% development cutoff, the released map recovers 95.7\% of the target compartments but queues 11.07 of the 13 untouched compartments per fault (\cref{tab:inspection}), so that the inspector examines nearly the entire tray. The 99th-percentile readout, although better at rank two, is no better here (11.41 at 96.0\%), and the 98\% cutoff raises the cost to 12.56. Conversely, when the cost is held to 0.30 compartments by the fixed-cost cutoff, the released map recovers only 81.9\% of the targets (\cref{fig:maps}d). A readout that is preferable for a fixed list length can therefore be inferior at a fixed recall.
+
+The reason is that the fault alters the released map across almost the entire tray (\cref{fig:collateral}). On oracle maps, 90.3\% of untouched compartments contain a pixel whose score changes by at least 0.5 (only 5.4\% of their pixels do, so the peaks are sharp). The vacancy-only edit, which leaves the same empty compartment, affects only 2.9\% of the untouched compartments and the sham 0.7\%. The fault-minus-vacancy difference is 87.4 points [82.4, 91.9] (86.6 [81.4, 91.2] after extraction): the additional pin, not the vacancy, causes the widespread response, and an insertion probe shows that the response follows the inserted class (\cref{fig:collateral}b).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{spread.pdf}
+\caption{\textbf{An extra pin, unlike a vacancy or a valid move, changes the map across the tray.} (a)~Untouched compartments of the re-segmented map that change by more than a cutoff after each edit, with 95\% bands over photos; class-wide and footprint heads use SALAD's full recipe (\cref{sec:scratch}; class-wide: seed 2, which reproduces the released head). (b)~Untouched instances of the inserted class that change by at least 0.5 after one extra instance is pasted into a part map (1.6k-step continuations; dots: seeds with 95\% intervals).}
+\label{fig:collateral}
+\end{figure}
+
+\subsection{Effect of footprint supervision}
+\label{sec:footprint}
+Fine-tuning with footprint targets reduces the cost at 95\% recall from 11.07 untouched compartments to 0.20 and 0.45 in the two seeds, at an achieved recall of 95.3\% and 96.0\% (\cref{tab:inspection}). The paired reductions relative to the released model are 10.88 [10.12, 11.56] and 10.62 [9.86, 11.31] compartments, and relative to the class-wide fine-tunes, the pre-specified control, 12.80 [12.72, 12.87] and 12.55 [12.45, 12.65] (supplement, paired-effects figure). Every fault and vacancy still raises an alarm, and all recall differences have intervals that include zero and remain above the 5-point floor. The reduction holds on oracle maps and on both fixed halves of the photographs (supplement). \Cref{fig:maps} illustrates a typical case in which the released map queues all 13 untouched compartments and the footprint map queues none.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{guidance_maps.pdf}
+\caption{\textbf{Footprint supervision empties the queue.} (a,b)~Extracted maps of the median fault (greyscale); cyan: targets, pink: untouched compartments at or above the pre-specified 95\% cutoff $t_c$. (c)~Compartment ROC from a test sweep, with the area up to 5\% from \cref{tab:inspection} (class-wide curves, area 39.3--39.4, omitted). (d)~Recall against cost at the fixed-cost (square), 95\% (circle) and 98\% (triangle) development cutoffs; hollow: seed~2; the two class-wide seeds overlap at fixed cost; the axis is broken between 1 and 11.}
+\label{fig:maps}
+\end{figure}
+
+The advantage holds at the other operating points. At the fixed-cost cutoff, the footprint heads recover 100.0\% and 98.2\% of targets at achieved costs of 0.38 and 0.57, compared with 81.9\% at 0.30 for the released model. The region area increases from 81.6\% to 96.3\% and 89.6\%; this ranking-based summary agrees in direction but does not reveal how much shorter the calibrated queue becomes.
+
+Two secondary outcomes depend on the seed: sham alarms rise from 7 to 9 and 20 (within the margin set against the control), and the top-2 rate rises to 87.7\% for seed~1 but falls to 74.6\% for seed~2.
+
+The class-wide fine-tunes, in contrast, retain every alarm but assign high scores to the entire tray: all 13 untouched compartments are queued and the top-2 rate is zero. With a development compartment AUROC of about 48\%, they fail the competence criterion of \cref{sec:protocol}.
+
+\subsection{Continuation of the original recipe}
+\label{sec:upstream}
+To separate the effect of the target from that of the rule-aware edits, we also continue training with SALAD's original synthetic edit families only, replacing the rule-aware slot with a clean map. The class-wide head of seed~2 passes the competence criterion (97.3\% development AUROC) and reproduces the behaviour of the released model, with 88.8\% of untouched compartments changing by at least 0.5. Footprint targets reduce this fraction to 1.3\% and the cost from 11.50 to 7.07, a paired reduction of 4.43 [3.72, 5.14] at 96.0\% and 95.3\% recall. Seed~1 shows a similar reduction (4.28), but its control does not reach the AUROC criterion. Footprint targets therefore shorten the queue even without rule-aware training, while the rule-aware edits yield the lowest costs.
+
+\subsection{Full recipe from random initialization}
+\label{sec:scratch}
+\begin{table*}[t]
+\centering
+\caption{\textbf{SALAD's full 70{,}000-step recipe from random initialization} (pushpins). Matched trays: spread (\%), cost $C$ and target recall $R$ (\%) at the 95\% development cutoff, and pooled $C$. Real defects: AU-sPRO up to 5\% FPR, overall and on extra pins (\%), defective compartments found (\%) and intact compartments opened per faulty tray at the development-fixed operating point, and image AUROC (\%). Bold: best retrained head.}
+\label{tab:replication}
+\small\setlength{\tabcolsep}{5pt}
+\input{tables/replication.tex}
+\end{table*}
+To test the target under SALAD's complete training, we retrain the whole composition branch from random initialization with the published recipe, the two arms sharing initialization and edit stream within each seed; the endpoint, guardrails and a reproduction check were fixed before scoring. The class-wide arms detect every fault and queue as many untouched compartments as the released head (\scrThrWCW{} at 95\% recall; \cref{tab:replication}). The footprint arms remove the spread (\scrSpreadFP\% against \scrSpreadCW\%) and queue \scrThrWFP{} compartments (paired \scrDThrW), below even the released map's top-three list (\relListW{} at \relListR\% recall). Two caveats remain. In seed~1 the class-wide arm spreads less than the released head (25.4\%) and fails the reproduction check, and at the scene cutoff the footprint heads alarm on \scrShamFP{} of 138 shams against \scrSrcFP{} unedited sources.
+
+\subsection{Real logical defects}
+\label{sec:native}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{native_results.pdf}
+\caption{\textbf{Real pushpin defects.} (a)~sPRO against false-positive rate (1.6k-step continuations; dashed: seed 2). (b)~Defective compartments found against intact compartments opened per faulty tray at the scene cutoff and pooled queue fixed on development trays; hollow: seed 2; whiskers: 95\% intervals over test images.}
+\label{fig:native}
+\end{figure}
+On the 91 real logical pushpin defects, the from-scratch footprint heads reach an AU-sPRO of \scrSproFP\% against \scrSproCW\% for their class-wide twins (\scrGain{} points; \cref{tab:replication}). At the development-fixed operating point they find \scrOpR\% of the defective compartments while opening \scrOpW{} intact compartments per faulty tray (\cref{fig:native}b). The released map's threshold finds \opRelThrR\% and opens \opRelThrW, and its top-three list opens \opRelListW{} but finds only \opRelListR\%. Against this list, the strongest policy on the released map, the footprint heads find \scrVsListR{} points more and open \scrVsListW{} fewer, in both seeds, with no consistent cost in image AUROC (\scrAucFP\% against \scrAucCW\%).
+
+The gain in localization does not depend on the recipe (supplement, per-category table). In 1.6k-step continuations footprint targets raise pushpin AU-sPRO from \ppCW\% to \ppFP\% (\ppGain{} points), and across all six matched pushpin pairs of three recipes footprint targets reach \sixFP\% and class-wide targets \sixCW\%. The gain is largest on extra pins (\ppAddGain{} points), as \cref{prop:optimal}(i) predicts. Breakfast boxes improve from \bbCW\% to \bbFP\%, driven by missing cereals; juice bottles and splicing connectors, whose parts are single instances, show no consistent change. The short continuations do not, however, beat the released list on cost (they open \opFPW{} intact compartments) and lower pushpin image AUROC from \aucRel\% to \aucFP\%; full training is what makes the footprint detector cheaper to inspect.
+
+\subsection{Interchangeable parts}
+\label{sec:ambiguous}
+Screw bags, SALAD's motivating case, count interchangeable screws, nuts and washers, and MVTec LOCO annotates an extra nut over every nut in the bag, whereas an extra pushpin is annotated only in its compartment. \Cref{prop:optimal}(ii) predicts that footprint targets cannot help here, and they do not: AU-sPRO is \sbFP\% against \sbCW\% (\sbGain{} points), and on extra parts the footprint heads localize worst. Footprint targets still remove the same-class spread (\cref{fig:collateral}b); what differs is the task's definition of where the fault is.
+
+\subsection{What valid shams reveal}
+\label{sec:shams}
+Valid shams also expose maps that respond to the edit rather than the rule. EfficientAD~\cite{batzner2024} and PatchCore~\cite{roth2022}, which read photographs, localize the targets of faulty trays better than the composition branch (fault-only region area \eadRegFault\% and \pcRegFault\% against \relRegFault\%), but they alarm on \eadSham{} and \pcSham{} of 138 shams, and counting sham and source compartments as negatives reverses the ranking (\eadRegAll\% and \pcRegAll\% against \relRegAll\%). SALAD's full system reaches 100.0\% logical AUROC on native pushpins, yet at a 10\% normal cutoff it alarms on 130 shams and 75 sources; its composition branch alarms on 7 shams. The supplement adds a second rule (a juice-bottle icon that must match the liquid), where the global appearance branch rather than the composition branch separates faults from shams, and a graph counterpart, in which a masked link predictor recovers switched links through node degree.

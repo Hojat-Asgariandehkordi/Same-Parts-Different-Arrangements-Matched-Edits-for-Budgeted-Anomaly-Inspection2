@@ -35,3 +35,13 @@ version (repo `...-Inspection`, commit `5a5ebeb`), which is unchanged.
 - Dev-only robustness numbers use the export's bootstrap seed 0 (paper intervals use seeds 2026/2027).
 - `\scratchSentence` (`[pending]`) is unused; `\scratchEndpoints` reports the failed seed-1 reproduction check honestly.
 - The repository is public; consider making it private before submission.
+
+## Template: identical to the CVPR 2027 author kit (v1)
+- `cvpr.sty` and `ieeenat_fullname.bst` are byte-identical to the kit.
+- `preamble.tex` is the kit file unchanged (microtype stays commented out, as in the kit); this paper's packages and
+  macros are appended at its end, where the kit says to import them.
+- `main.tex` is the kit's `main.tex` with only the title, author and `\input{sec/...}` lines changed; the text lives in
+  `sec/0_abstract.tex` ... `sec/6_llm_statement.tex`, and the bibliography is `main.bib`, as in the kit.
+- The supplement is the kit's `sec/X_suppl.tex` (`\clearpage`, `\setcounter{page}{1}`, `\maketitlesupplementary`);
+  `supplement.tex` is the kit's `main.tex` skeleton that compiles it on its own.
+- With microtype off the main text and LLM statement still end on page 8; references start on page 9.

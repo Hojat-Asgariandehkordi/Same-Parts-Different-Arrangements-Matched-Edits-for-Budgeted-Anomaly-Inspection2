@@ -1,0 +1,110 @@
+\section{Method}
+\label{sec:method}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{pipeline.pdf}
+\caption{\textbf{Only the training target changes; everything at test time is fixed in advance.} Training (green) differs only in the target mask. At test, a part map comes from a U-Net (\emph{extracted}) or from the edited label map (\emph{oracle}); the scene alarm ($t_s$) and the compartment cutoff ($t_c$) are fixed on development data (blue). The values are illustrative and match the example under \cref{eq:rc} ($R=2/2$, $C=3$). Network icons created in BioRender.}
+\label{fig:pipeline}
+\end{figure*}
+
+\subsection{Problem setting}
+\label{sec:setting}
+A photograph $x_i$ shows a tray of $|\E|=15$ compartments arranged in a $5{\times}3$ grid, and the published rule requires exactly one pin per compartment~\cite{bergmann2022}. A part extractor maps the photograph to a six-class part map $m_i\in\{0,\dots,5\}^{256\times256}$, and the composition branch $f$ of the detector returns a score map $S_i=f(m_i)\in[0,1]^{256\times256}$ in which higher values indicate anomalies (\cref{fig:pipeline}). For a compartment $e\in\E$, $S_i|_e$ denotes the scores of its pixels; compartment boundaries are fixed once from the released label maps.
+
+\subsection{Matched edits}
+\label{sec:edits}
+We use all 138 held-out normal pushpin photographs. Using the released class mask and a two-pixel RGB halo, we cut out one intact pin and translate it without resampling, which yields four variants per photograph (\cref{fig:teaser}a, \cref{fig:photos}). The \emph{source} is the unedited photograph. In the \emph{valid sham}, the pin moves within its own compartment, so every compartment still holds one pin. In the \emph{fault}, the pin moves by the same squared displacement into a face-adjacent occupied compartment, leaving its source compartment $a_i$ empty and the recipient $b_i$ with two pins. The \emph{vacancy-only} variant removes the pin without pasting it elsewhere. The sham and the fault share the cutout, the fill (the median of the local dark background) and the paste area, and therefore change exactly the same number of RGB pixels; collisions, divider clearance and background agreement are verified before any score is computed. Displacements range from 19 to 51 pixels.
+
+Each variant has a target set $\T_i$ of compartments that require inspection: $\T_i=\{a_i,b_i\}$ for a fault, $\T_i=\{a_i\}$ for a vacancy, and $\T_i=\emptyset$ for a source or a sham, where every queued compartment is a false mark. Since the vacancy-only edit retains the empty half of the fault, comparing the two isolates the effect of the additional pin.
+
+Every variant is scored through two interfaces with identical detector weights. The \emph{oracle} interface moves the pin directly in the released label map, while the \emph{extracted} interface re-segments every RGB variant, including the source, with an independent U-Net trained only on normal training photographs (97.3\% development pin IoU). Since a deployed system never observes ground-truth labels, we report the extracted interface unless stated otherwise.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{matched_photos.pdf}
+\caption{\textbf{Adding a pin changes the released map across the whole tray} (real matched edits, oracle maps). Top: the photo whose released fault-minus-sham score difference is the median. Bottom: the first sham that raises an alarm; its source does too. White dashed: compartment of the moved pin; cyan: fault targets. Right: per-compartment change from source to fault, $|S^{\text{fault}}-S^{\text{source}}|$; in the bottom row every compartment changes. Photos: MVTec LOCO AD, CC BY-NC-SA 4.0.}
+\label{fig:photos}
+\end{figure*}
+
+\subsection{Calibrated inspection queue}
+\label{sec:queue}
+We model the two decisions of an inspector, whether to open a tray and which compartments to check, with two cutoffs that are fixed before testing (\cref{alg:queue}): a scene cutoff $t_s\in[0,1]$ on the highest pixel score of a map, and a compartment cutoff $t_c\in[0,1]$ on the highest score inside a compartment. Writing $p$ for a pixel of the $256{\times}256$ grid, a tray raises an alarm when its highest pixel score exceeds the scene cutoff,
+\begin{equation}
+ \mathrm{alarm}_i=\mathbb{1}\bigl[\max_p S_i(p)>t_s\bigr],
+ \label{eq:alarm}
+\end{equation}
+where $\mathbb{1}[\cdot]$ equals 1 if its argument holds and 0 otherwise. Let $M_{(1)}\le\dots\le M_{(69)}$ be the sorted maxima $\max_p S_v(p)$ of 69 unedited validation photographs $v$. We set
+\begin{equation}
+ t_s=M_{(63)},\qquad 63=\lceil 0.9\,(69+1)\rceil,
+ \label{eq:ts}
+\end{equation}
+a strict split-conformal cutoff~\cite{bates2023}: a new normal tray, exchangeable with the validation trays, exceeds $t_s$ with probability at most $1-63/70=10\%$. Each compartment then receives its maximum score $g_i(e)=\max S_i|_e$, and the inspection queue at compartment cutoff $t_c$ is
+\begin{equation}
+ \Q_i=\begin{cases}\{e\in\E:\ g_i(e)\ge t_c\} & \text{if }\mathrm{alarm}_i=1,\\ \emptyset & \text{otherwise,}\end{cases}
+ \label{eq:queue}
+\end{equation}
+so that the targets of a tray without an alarm count as missed. Over $n$ faults, the target recall $R$ and the inspection cost $C$ are
+\begin{equation}
+ R=\frac{1}{2n}\sum_{i=1}^n|\Q_i\cap\T_i|,\qquad
+ C=\frac{1}{n}\sum_{i=1}^n|\Q_i\setminus\T_i|,
+ \label{eq:rc}
+\end{equation}
+\ie, the fraction of target compartments that are queued and the mean number of untouched compartments queued per fault, which ranges from 0 to 13. For example, a fault whose queue contains both targets and three other compartments contributes $2/2$ to recall and $3$ to cost.
+
+The compartment cutoff is fitted on 69 matched \emph{development} faults $\mathcal{D}$, constructed in the same way from validation photographs, and never on test data. Let $G=\{g_j(e): j\in\mathcal{D},\,e\in\T_j\}$ be the multiset of the $2\times69=138$ development target scores, with $g_j(e)=0$ for a fault without an alarm, and let $G^{(k)}$ denote its $k$-th largest element. The \emph{95\% cutoff} is the highest threshold that attains 95\% target recall on these faults,
+\begin{equation}
+ t_c^{95}=G^{(\lceil 0.95\,|G|\rceil)}=G^{(132)}.
+ \label{eq:tc}
+\end{equation} A \emph{fixed-cost cutoff} instead admits at most 0.5 untouched compartments per development fault and is the 35th largest untouched score, since $\lfloor0.5\cdot69\rfloor+1=35$; for this cutoff the comparison in \cref{eq:queue} is strict ($g_i(e)>t_c$). Both cutoffs are fitted separately for each map and interface, and on test data we report the achieved $R$ and $C$ together with alarm rates on all four variants.
+
+We also report how often both targets are the two highest-scoring compartments (\emph{top 2}), the mean rank of the second target, a top-$k$ \emph{list} that queues the $k$ highest compartments with $k$ fitted like $t_c$, and, as a counterpart to sPRO~\cite{bergmann2022}, the \emph{region area}: target recall integrated up to a false-compartment rate of 0.05 over all compartments, with untouched, source and sham compartments as negatives. Region area is computed on test data without the scene alarm, so it measures ranking rather than the cost at an operating point.
+
+\begin{algorithm}[t]
+\caption{Calibrated inspection queue}
+\label{alg:queue}
+\begin{algorithmic}[1]
+\Require map model $f$; cells $\E$; normal validation photos $\mathcal{V}$; development faults $\mathcal{D}$ with targets $\T_j$
+\State $t_s\gets$ 63rd smallest of $\{\max_p f(m_v)(p)\}_{v\in\mathcal{V}}$ \Comment{$|\mathcal{V}|=69$}
+\State $G\gets\{g_j(e): j\in\mathcal{D},\ e\in\T_j\}$, with $g_j(e)=0$ if $j$ has no alarm
+\State $t_c\gets$ the $\lceil 0.95\,|G|\rceil$-th largest value of $G$ \Comment{95\% cutoff}
+\For{each test photo $i$}
+  \State $S_i\gets f(m_i)$;\ \textbf{if} $\max_p S_i(p)\le t_s$ \textbf{then} $\Q_i\gets\emptyset$
+  \State \textbf{else} $\Q_i\gets\{e\in\E: \max S_i|_e\ge t_c\}$
+\EndFor
+\State \Return $R$ and $C$ from \cref{eq:rc}
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Footprint supervision}
+\label{sec:targets}
+SALAD trains its composition branch on synthetic edits of normal part maps. For an edited map, a discriminative U-Net predicts a logit $z_p\in\mathbb{R}$ at every pixel $p$ of the pixel set $P$, so that $\sigma(z_p)=1/(1+e^{-z_p})$ is the predicted anomaly probability, and a binary target mask $y\in\{0,1\}^{P}$ states which pixels should be called anomalous. With the sigmoid focal loss $\mathrm{FL}(z,y)=-\alpha_y(1-q)^{\gamma}\log q$, where $q=\sigma(z)$ if $y=1$ and $q=1-\sigma(z)$ otherwise, $\alpha_1=\alpha=0.25$, $\alpha_0=1-\alpha$ and $\gamma=2$~\cite{lin2017focal}, the branch minimizes
+\begin{equation}
+ \mathcal{L}=5\cdot\frac{1}{|P|}\sum_p \mathrm{FL}(z_p,y_p)+\frac{1}{|P|}\sum_p\bigl|\sigma(z_p)-y_p\bigr|,
+ \label{eq:loss}
+\end{equation}
+where the first term emphasizes hard pixels, the second penalizes the absolute probability error, and the weight 5 is that of the released implementation. Since $y$ is the only supervision of the map, it determines which pixels the branch learns to score high. When a part of class $k$ is inserted, producing the edited map $m'$, the released implementation marks every pixel of that class~\cite{fucka2025},
+\begin{equation}
+ y^{\text{cw}}(p)=\mathbb{1}[m'(p)=k]\qquad\text{(class-wide)},
+\end{equation}
+reflecting the view that an extra screw in a bag may be any of the screws. In a tray, however, only one compartment is over-full, which motivates marking only the footprint $F$ of the pasted donor,
+\begin{equation}
+ y^{\text{fp}}(p)=\mathbb{1}[p\in F]\qquad\text{(footprint)}.
+\end{equation}
+For relocations, both policies additionally mark the vacated footprint, shams always receive $y\equiv0$, and same-image relabelling targets are left unchanged, so the two policies differ only in the insertion part of the mask. In seed~1, a relocation marks on average 3,823 pixels under the class-wide policy and 461 under the footprint policy. The rule is used only to construct training edits; at test time the model observes a part map alone. Footprint targets need no extra information, because the generator knows $F$ for every edit. For an edited map $m'$ and a pixel $p$, let $q(m',p)$ be the probability, under the training distribution of edits, that the target at $p$ is 1.
+
+\begin{proposition}
+\label{prop:optimal}
+Let the pixel loss $\ell(s,y)$ be non-increasing in the score $s$ for $y=1$ and non-decreasing for $y=0$, as are cross-entropy, the focal loss, the L1 loss on $\sigma$ and their sum in \cref{eq:loss}. Then the minimizer of the conditional risk $r(s;q)=q\,\ell(s,1)+(1-q)\,\ell(s,0)$ can be chosen non-decreasing in $q$. Hence (i), which predicts spread: under class-wide targets every pixel of class $k$ has $q$ at least the posterior probability that $m'$ contains an insertion of class $k$, so when an insertion is evident an optimal head raises all of them; and (ii), which predicts where footprint targets cannot help: under footprint targets, if the inserted instance is one of $m$ instances that the map cannot tell apart, its pixels have $q$ at most $1/m$ plus the probability of the other edits.
+\end{proposition}
+\begin{proof}
+$\partial_q\partial_s r=\partial_s\ell(s,1)-\partial_s\ell(s,0)\le0$, so $r$ has decreasing differences in $(s,q)$ and Topkis' theorem~\cite{topkis1978} gives a minimizer non-decreasing in $q$. For (i), every class-$k$ pixel of a map with a class-$k$ insertion has $y^{\text{cw}}=1$; for (ii), the posterior probability that a given one of $m$ indistinguishable instances was pasted is at most $1/m$.
+\end{proof}
+
+\subsection{Evaluation protocol}
+\label{sec:protocol}
+The primary comparison is the paired difference in cost between the footprint and class-wide policies on extracted maps,
+\begin{equation}
+ \Delta C=\frac{1}{n}\sum_{i=1}^{n}\Bigl(|\Q_i^{\text{fp}}\setminus\T_i|-|\Q_i^{\text{cw}}\setminus\T_i|\Bigr),
+ \label{eq:delta}
+\end{equation}
+where $\Q_i^{\text{fp}}$ and $\Q_i^{\text{cw}}$ are the queues of the same fault under each policy at its own 95\% cutoff; negative values favour the footprint policy. Before testing, we specified that a useful reduction must remove at least one untouched compartment with a 95\% interval excluding zero, while keeping the achieved recall at or above 90\% and within 5 points of the control, the fault and vacancy alarm rates at or above 95\% and within 3 points, and the increase in sham alarms below 5 points. Attributing the effect to the target additionally requires that the class-wide control meet a \emph{competence criterion} on development data: alarm rates and compartment AUROC of at least 90\%. Intervals are computed from 4,000 bootstrap resamples of the original photographs, in which all variants, policies and interfaces of a photograph are resampled together, and are conditional on the fitted models and cutoffs. Two seeds and two fixed halves of the test photographs (63 and 75) assess stability. On the real logical defects of MVTec LOCO we report AU-sPRO up to a 5\% false-positive rate~\cite{bergmann2022}, re-implemented at map resolution (within 0.7 points of the official code on four heads), and, for pushpins, $R$ and $C$ at the development-fixed operating point, where a compartment is a target when its annotation covers at least 20 pixels. These use parameters refit on development relocations pooled with vacancies, since real trays have one or several faulty compartments.

@@ -1,0 +1,6 @@
+\section{Conclusion}
+\label{sec:conclusion}
+\label{sec:discussion}
+We asked how much inspection effort a detector that catches every fault still imposes, and what in its training determines that effort. The released composition branch detects every fault, yet at high recall it directs the inspector to 11 of 13 untouched compartments. The cost is set by the training target: marking every part of the inserted class teaches the network that one extra pin makes the whole tray anomalous, and marking only the pasted part reduces the cost to below half a compartment. Trained from scratch this way, the detector finds more defective compartments on real pushpin trays while opening fewer intact ones than any policy on the released map. Where parts are interchangeable and annotated as a set, as in screw bags, the class-wide target remains the better match, so the extent of a synthetic label belongs to the task specification.
+
+Our edits are composites of one tray; ranking, sham specificity and the from-scratch class-wide control depend on the seed; footprint heads raise more sham alarms; and short continuations do not beat the released list on cost. Physical rearrangements and other detectors trained on synthetic insertions are the next tests.
