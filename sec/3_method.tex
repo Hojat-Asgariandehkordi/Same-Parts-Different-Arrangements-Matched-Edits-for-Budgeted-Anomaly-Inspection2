@@ -3,7 +3,7 @@
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{pipeline.pdf}
-\caption{\textbf{Only the training target changes; everything at test time is fixed in advance.} Training (green) differs only in the target mask. At test, a part map comes from a U-Net (\emph{extracted}) or from the edited label map (\emph{oracle}); the scene alarm ($t_s$) and the compartment cutoff ($t_c$) are fixed on development data (blue). The values are illustrative and match the example under \cref{eq:rc} ($R=2/2$, $C=3$). Network icons created in BioRender.}
+\caption{Only the training target changes; everything at test time is fixed in advance. Training (green) differs only in the target mask. At test, a part map comes from a U-Net (\emph{extracted}) or from the edited label map (\emph{oracle}); the scene alarm ($t_s$) and the compartment cutoff ($t_c$) are fixed on development data (blue). The values are illustrative and match the example under \cref{eq:rc} ($R=2/2$, $C=3$). Network icons created in BioRender.}
 \label{fig:pipeline}
 \end{figure*}
 
@@ -22,7 +22,7 @@ Every variant is scored through two interfaces with identical detector weights. 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{matched_photos.pdf}
-\caption{\textbf{Adding a pin changes the released map across the whole tray} (real matched edits, oracle maps). Top: the photo whose released fault-minus-sham score difference is the median. Bottom: the first sham that raises an alarm; its source does too. White dashed: compartment of the moved pin; cyan: fault targets. Right: per-compartment change from source to fault, $|S^{\text{fault}}-S^{\text{source}}|$; in the bottom row every compartment changes. Photos: MVTec LOCO AD, CC BY-NC-SA 4.0.}
+\caption{Adding a pin changes the released map across the whole tray (real matched edits, oracle maps). Top: the photo whose released fault-minus-sham score difference is the median. Bottom: the first sham that raises an alarm; its source does too. White dashed: compartment of the moved pin; cyan: fault targets. Right: per-compartment change from source to fault, $|S^{\text{fault}}-S^{\text{source}}|$; in the bottom row every compartment changes. Photos: MVTec LOCO AD, CC BY-NC-SA 4.0.}
 \label{fig:photos}
 \end{figure*}
 

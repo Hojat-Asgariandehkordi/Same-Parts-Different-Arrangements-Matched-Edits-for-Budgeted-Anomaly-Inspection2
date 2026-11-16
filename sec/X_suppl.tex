@@ -27,7 +27,7 @@ This section gives the details of the paired fine-tunes in Sec.~4.2 of the main 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{paired_forest.pdf}
-\caption{\textbf{Footprint targets remove 10 to 13 untouched compartments per fault without losing recall.} Paired differences on extracted maps, footprint minus each comparator, at the pre-specified cutoffs, with 95\% intervals; hollow: seed~2; bold: the primary contrast. Dotted: pre-specified thresholds ($-1$ compartment, $-5$ and $+5$ pp). $\dagger$: this seed's control fails the competence criterion (Sec.~4.3 of the main paper). Oracle maps and values: supplement Tabs.~3 and 8.}
+\caption{Footprint targets remove 10 to 13 untouched compartments per fault without losing recall. Paired differences on extracted maps, footprint minus each comparator, at the pre-specified cutoffs, with 95\% intervals; hollow: seed~2; bold: the primary contrast. Dotted: pre-specified thresholds ($-1$ compartment, $-5$ and $+5$ pp). $\dagger$: this seed's control fails the competence criterion (Sec.~4.3 of the main paper). Oracle maps and values: supplement Tabs.~3 and 8.}
 \label{fig:forest_supp}
 \end{figure}
 
@@ -44,7 +44,7 @@ Training uses 372 normal training photographs and 371 eligible rule-aware traini
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Positive mask area in paired rule-aware training.} Positive counts are means over examples of each edit type on a $256{\times}256$ grid. The upstream-only continuation uses the same synthetic edits and replaces the rule-aware slot with a clean map.}
+\caption{Positive mask area in paired rule-aware training. Positive counts are means over examples of each edit type on a $256{\times}256$ grid. The upstream-only continuation uses the same synthetic edits and replaces the rule-aware slot with a clean map.}
 \label{tab:area_v3}
 \small
 \input{tables/positive_area.tex}
@@ -52,7 +52,7 @@ Training uses 372 normal training photographs and 371 eligible rule-aware traini
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Rule-aware fine-tuning on oracle labels.} See the main inspection table for definitions and the extracted results. Source and sham counts are paired within originals.}
+\caption{Rule-aware fine-tuning on oracle labels. See the main inspection table for definitions and the extracted results. Source and sham counts are paired within originals.}
 \label{tab:oracle_v3}
 \small
 \setlength{\tabcolsep}{4.5pt}
@@ -61,7 +61,7 @@ Training uses 372 normal training photographs and 371 eligible rule-aware traini
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Paired rule-aware differences at the pre-specified cutoffs.} Untouched compartments are per fault; target recall, sham alarms and region area are in percentage points. Each interval uses 4,000 resamples of original photographs.}
+\caption{Paired rule-aware differences at the pre-specified cutoffs. Untouched compartments are per fault; target recall, sham alarms and region area are in percentage points. Each interval uses 4,000 resamples of original photographs.}
 \label{tab:contrasts_v3}
 \small
 \input{tables/inspection_deltas.tex}
@@ -69,7 +69,7 @@ Training uses 372 normal training photographs and 371 eligible rule-aware traini
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Additional rule-aware operating points.} Top 3: both targets among the three highest compartments. The 98\% and 0.5-cost cutoffs are set on development data. Recalls and the fault-only low-FPR region area are percentages. Untouched, sham and vacancy-only costs are means per image. Sham marks and vacancy-only untouched marks use the 95\% development cutoff.}
+\caption{Additional rule-aware operating points. Top 3: both targets among the three highest compartments. The 98\% and 0.5-cost cutoffs are set on development data. Recalls and the fault-only low-FPR region area are percentages. Untouched, sham and vacancy-only costs are means per image. Sham marks and vacancy-only untouched marks use the 95\% development cutoff.}
 \label{tab:operating_v3}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -78,7 +78,7 @@ Training uses 372 normal training photographs and 371 eligible rule-aware traini
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Recall at equal realized cost on extracted test faults.} Recall at two realized costs, in untouched compartments per image, obtained by interpolating the common-threshold sweep. Gains are against the released maximum in percentage points. Intervals resample the same original photos across readouts. The scene gate passes every fault in these rows. The development-locked comparison remains the prospective decision test.}
+\caption{Recall at equal realized cost on extracted test faults. Recall at two realized costs, in untouched compartments per image, obtained by interpolating the common-threshold sweep. Gains are against the released maximum in percentage points. Intervals resample the same original photos across readouts. The scene gate passes every fault in these rows. The development-locked comparison remains the prospective decision test.}
 \label{tab:exactcost}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
@@ -92,7 +92,7 @@ The rule-aware class-wide heads detect all faults and vacancies but fail the loc
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Upstream-only continuation on extracted maps.} The original SALAD-style augmentations are used without explicit relocation targets from the pushpin rule. Scene alarms and spatial metrics have the same definitions as the main table.}
+\caption{Upstream-only continuation on extracted maps. The original SALAD-style augmentations are used without explicit relocation targets from the pushpin rule. Scene alarms and spatial metrics have the same definitions as the main table.}
 \label{tab:upstream_e}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -101,7 +101,7 @@ The rule-aware class-wide heads detect all faults and vacancies but fail the loc
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Upstream-only continuation on oracle labels.} The released oracle path is shown for comparison.}
+\caption{Upstream-only continuation on oracle labels. The released oracle path is shown for comparison.}
 \label{tab:upstream_o}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -110,7 +110,7 @@ The rule-aware class-wide heads detect all faults and vacancies but fail the loc
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Paired differences in the upstream-only continuation.} Untouched compartments per fault and percentage-point differences at pre-specified cutoffs.}
+\caption{Paired differences in the upstream-only continuation. Untouched compartments per fault and percentage-point differences at pre-specified cutoffs.}
 \label{tab:upstream_diff}
 \small
 \input{tables/inspection_deltas_upstream.tex}
@@ -118,7 +118,7 @@ The rule-aware class-wide heads detect all faults and vacancies but fail the loc
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Upstream-only alternate operating points.} Recalls and region area in percent. Counts are compartments per photo. The released 99th percentile, 95th percentile and reconstruction product results appear in \cref{tab:operating_v3}.}
+\caption{Upstream-only alternate operating points. Recalls and region area in percent. Counts are compartments per photo. The released 99th percentile, 95th percentile and reconstruction product results appear in \cref{tab:operating_v3}.}
 \label{tab:upstream_alt}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -127,7 +127,7 @@ The rule-aware class-wide heads detect all faults and vacancies but fail the loc
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Development controls and inspection thresholds.} Compartment AUROC is measured on matched development faults. $t_s$ is the scene threshold. $t_{95}$ and $t_{98}$ use 95\% and 98\% target recall, and $t_{\rm budget}$ uses 0.5 untouched compartments. Numbers are rounded for display. All decisions use full-precision thresholds.}
+\caption{Development controls and inspection thresholds. Compartment AUROC is measured on matched development faults. $t_s$ is the scene threshold. $t_{95}$ and $t_{98}$ use 95\% and 98\% target recall, and $t_{\rm budget}$ uses 0.5 untouched compartments. Numbers are rounded for display. All decisions use full-precision thresholds.}
 \label{tab:thresholds_v3}
 \scriptsize
 \setlength{\tabcolsep}{3.5pt}
@@ -136,7 +136,7 @@ The rule-aware class-wide heads detect all faults and vacancies but fail the loc
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Stability on two fixed photo halves.} Difference in untouched compartments per fault, footprint minus class-wide. The 63 and 75 originals were assigned before fitting. The recipe with relocation training is the primary test. The upstream-only continuation reuses the same originals.}
+\caption{Stability on two fixed photo halves. Difference in untouched compartments per fault, footprint minus class-wide. The 63 and 75 originals were assigned before fitting. The recipe with relocation training is the primary test. The upstream-only continuation reuses the same originals.}
 \label{tab:halves_v3}
 \scriptsize
 \input{tables/queue_halves.tex}
@@ -144,7 +144,7 @@ The rule-aware class-wide heads detect all faults and vacancies but fail the loc
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Collateral change after rule-aware adaptation.} Compartments and pixels report percentages with absolute change $\geq0.5$. Max and quantiles are mean within-compartment statistics in sigmoid units. We use the same 13 untouched fault compartments for each variant.}
+\caption{Collateral change after rule-aware adaptation. Compartments and pixels report percentages with absolute change $\geq0.5$. Max and quantiles are mean within-compartment statistics in sigmoid units. We use the same 13 untouched fault compartments for each variant.}
 \label{tab:changes_v3}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
@@ -153,7 +153,7 @@ The rule-aware class-wide heads detect all faults and vacancies but fail the loc
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Collateral change after upstream-only continuation.} The region definition matches \cref{tab:changes_v3}.}
+\caption{Collateral change after upstream-only continuation. The region definition matches \cref{tab:changes_v3}.}
 \label{tab:changes_upstream}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
@@ -167,7 +167,7 @@ The released teacher, student, RGB autoencoder, map autoencoder and map U-Net ar
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Released SALAD with all branches on the matched pushpins.} Strict normal-validation cutoffs, separately for each branch and interface. Wins give paired fault-over-sham direction with half ties. The global branch emits a scalar.}
+\caption{Released SALAD with all branches on the matched pushpins. Strict normal-validation cutoffs, separately for each branch and interface. Wins give paired fault-over-sham direction with half ties. The global branch emits a scalar.}
 \label{tab:fullpins}
 \small
 \input{tables/full_pushpin.tex}
@@ -186,7 +186,7 @@ The mean-aggregation comparator uses the original query-masked endpoint inputs, 
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Response after refitting with mean aggregation.} AUC and top-four recovery use absolute matched probability change and donor-macro aggregation. Top-four change is refit minus original in percentage points. Intervals are donor-paired. The tiers share donors.}
+\caption{Response after refitting with mean aggregation. AUC and top-four recovery use absolute matched probability change and donor-macro aggregation. Top-four change is refit minus original in percentage points. Intervals are donor-paired. The tiers share donors.}
 \label{tab:refit}
 \small
 \input{tables/graph_mean.tex}
@@ -211,7 +211,7 @@ Of 165 GlaS fields, 140 have at least four nodes, 129 admit a switch, and 78 mee
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Coverage, balance, and sensitivity to matching.} D/F/E gives donors, fields or scans, and edits. Raw and local columns give the median and maximum multiplicative imbalance under the \emph{same} correspondence. The original length criterion uses separately sorted raw lengths, so its maximum under the common correspondence can exceed 1.35. Roles counts exact role-pair matches. Gains are against typed centroid distance. Rank minus response compares the GNN's edited-state loss AUROC with its matched absolute probability-change AUROC. Paired intervals are in points.}
+\caption{Coverage, balance, and sensitivity to matching. D/F/E gives donors, fields or scans, and edits. Raw and local columns give the median and maximum multiplicative imbalance under the \emph{same} correspondence. The original length criterion uses separately sorted raw lengths, so its maximum under the common correspondence can exceed 1.35. Roles counts exact role-pair matches. Gains are against typed centroid distance. Rank minus response compares the GNN's edited-state loss AUROC with its matched absolute probability-change AUROC. Paired intervals are in points.}
 \label{tab:balance}
 \scriptsize
 \setlength{\tabcolsep}{3.5pt}
@@ -223,7 +223,7 @@ Place four same-role parts at consecutive vertices of a unit square and two more
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Graph ranking and response results.} Source and Edited rank targets by the observed-state anomaly score (geometry uses its fixed readout). Response ranks absolute change in conditional probability or change in the geometry readout. The edited intervals are donor paired. GlaS and HVSMR use 78 and 59 source graphs in the original length tier. The pair MLP and frozen GNN controls keep conditional probability fixed.}
+\caption{Graph ranking and response results. Source and Edited rank targets by the observed-state anomaly score (geometry uses its fixed readout). Response ranks absolute change in conditional probability or change in the geometry readout. The edited intervals are donor paired. GlaS and HVSMR use 78 and 59 source graphs in the original length tier. The pair MLP and frozen GNN controls keep conditional probability fixed.}
 \label{tab:previous_graph}
 \scriptsize
 \setlength{\tabcolsep}{3.5pt}
@@ -247,7 +247,7 @@ For the GNN, the two paths through observed-state bit $a$ and logit $z$ give dir
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Matched switch sensitivity, direction, and collateral.} $T$ denotes the four targets and $U$ untouched pairs. AUROCs, moved fractions and directional wins are percentages. $W_+$ and $W_-$ summarize additions and removals. The last five columns use development IQR units and report signed mean target shift and absolute shift percentiles. Each percentile is first taken within an edit. The matched scope has 78 fields from 12 gland donors and 59 scans from 59 cardiac donors. Full paired intervals and raw pair scores are retained in the reproducibility data.}
+\caption{Matched switch sensitivity, direction, and collateral. $T$ denotes the four targets and $U$ untouched pairs. AUROCs, moved fractions and directional wins are percentages. $W_+$ and $W_-$ summarize additions and removals. The last five columns use development IQR units and report signed mean target shift and absolute shift percentiles. Each percentile is first taken within an edit. The matched scope has 78 fields from 12 gland donors and 59 scans from 59 cardiac donors. Full paired intervals and raw pair scores are retained in the reproducibility data.}
 \label{tab:shifts}
 \scriptsize
 \setlength{\tabcolsep}{2.8pt}
@@ -259,7 +259,7 @@ Write the original neighborhood vector as the mean message times $\tilde d_i/\sq
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Degree intervention on the fitted GNN.} Response ranks absolute changes in probability. Paired 95\% intervals are shown. Repeated edits reuse the original donors.}
+\caption{Degree intervention on the fitted GNN. Response ranks absolute changes in probability. Paired 95\% intervals are shown. Repeated edits reuse the original donors.}
 \label{tab:degree}
 \scriptsize
 \input{tables/degree.tex}
@@ -284,7 +284,7 @@ The image score is the official maximum sigmoid output. The validation IQRs are 
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Fixed photo halves for the matched photo edits.} Sham, Fault and Del. count alarms. All fault and deletion recalls are 100\% on the respective support. Bootstrap intervals for tied all-success contrasts are conditional on the sample.}
+\caption{Fixed photo halves for the matched photo edits. Sham, Fault and Del. count alarms. All fault and deletion recalls are 100\% on the respective support. Bootstrap intervals for tied all-success contrasts are conditional on the sample.}
 \label{tab:halves}
 \scriptsize
 \setlength{\tabcolsep}{3.3pt}
@@ -296,7 +296,7 @@ The original SALAD repository checkpoint pair is used for each category. We veri
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Native map scores and composition branch alarms.} AUROC in percent. Pos/good counts positives and their eligible negative comparison images. Cutoffs come from normal validation only and stay fixed across scopes. Macro AUROC weights categories equally. Macro alarm counts add images. Pushpins has no eligible matched signature.}
+\caption{Native map scores and composition branch alarms. AUROC in percent. Pos/good counts positives and their eligible negative comparison images. Cutoffs come from normal validation only and stay fixed across scopes. Macro AUROC weights categories equally. Macro alarm counts add images. Pushpins has no eligible matched signature.}
 \label{tab:locodetail}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
@@ -308,7 +308,7 @@ The native matched analysis uses the original component rule with an eight-conne
 \begin{figure*}[t]
 \centering
 \includegraphics[width=.88\textwidth]{screw_discordant.pdf}
-\caption{\textbf{Screw-bag logical cases with discordant grid and centroid-pair alarms.} At the pre-specified thresholds, two of 79 supported faults alarm under the grid alone and three under the pair summary alone. The colorized maps show the five cases. Thin fragments around the bag and merged foreground illustrate the difference between predicted counts and physical screw inventory.}
+\caption{Screw-bag logical cases with discordant grid and centroid-pair alarms. At the pre-specified thresholds, two of 79 supported faults alarm under the grid alone and three under the pair summary alone. The colorized maps show the five cases. Thin fragments around the bag and merged foreground illustrate the difference between predicted counts and physical screw inventory.}
 \label{fig:screw}
 \end{figure*}
 

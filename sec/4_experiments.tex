@@ -9,7 +9,7 @@ The released composition branch raises an alarm on all 138 faults and all 138 va
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Pushpin inspection on extracted maps} (138 test photos). Every row raises an alarm on all 138 faults and 138 vacancies. \emph{Sham}: valid shams with an alarm. \emph{Top 2}: both targets in the two highest compartments. \emph{2nd}: mean rank of the second target. $R$ and $C$ use the 95\% development cutoff (\cref{eq:rc}). \emph{Area}: region area at false-compartment rate $\le0.05$, in percent. Oracle maps are in the supplement.}
+\caption{Pushpin inspection on extracted maps (138 test photos). Every row raises an alarm on all 138 faults and 138 vacancies. \emph{Sham}: valid shams with an alarm. \emph{Top 2}: both targets in the two highest compartments. \emph{2nd}: mean rank of the second target. $R$ and $C$ use the 95\% development cutoff (\cref{eq:rc}). \emph{Area}: region area at false-compartment rate $\le0.05$, in percent. Oracle maps are in the supplement.}
 \label{tab:inspection}
 \footnotesize
 \setlength{\tabcolsep}{3.2pt}
@@ -36,7 +36,7 @@ The reason is that the fault alters the released map across almost the entire tr
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{spread.pdf}
-\caption{\textbf{An extra pin, unlike a vacancy or a valid move, changes the map across the tray.} (a)~Untouched compartments of the re-segmented map that change by more than a cutoff after each edit, with 95\% bands over photos; class-wide and footprint heads use SALAD's full recipe (\cref{sec:scratch}; class-wide: seed 2, which reproduces the released head). (b)~Untouched instances of the inserted class that change by at least 0.5 after one extra instance is pasted into a part map (1.6k-step continuations; dots: seeds with 95\% intervals).}
+\caption{An extra pin, unlike a vacancy or a valid move, changes the map across the tray. (a)~Untouched compartments of the re-segmented map that change by more than a cutoff after each edit, with 95\% bands over photos; class-wide and footprint heads use SALAD's full recipe (\cref{sec:scratch}; class-wide: seed 2, which reproduces the released head). (b)~Untouched instances of the inserted class that change by at least 0.5 after one extra instance is pasted into a part map (1.6k-step continuations; dots: seeds with 95\% intervals).}
 \label{fig:collateral}
 \end{figure}
 
@@ -47,7 +47,7 @@ Fine-tuning with footprint targets reduces the cost at 95\% recall from 11.07 un
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{guidance_maps.pdf}
-\caption{\textbf{Footprint supervision empties the queue.} (a,b)~Extracted maps of the median fault (greyscale); cyan: targets, pink: untouched compartments at or above the pre-specified 95\% cutoff $t_c$. (c)~Compartment ROC from a test sweep, with the area up to 5\% from \cref{tab:inspection} (class-wide curves, area 39.3--39.4, omitted). (d)~Recall against cost at the fixed-cost (square), 95\% (circle) and 98\% (triangle) development cutoffs; hollow: seed~2; the two class-wide seeds overlap at fixed cost; the axis is broken between 1 and 11.}
+\caption{Footprint supervision empties the queue. (a,b)~Extracted maps of the median fault (greyscale); cyan: targets, pink: untouched compartments at or above the pre-specified 95\% cutoff $t_c$. (c)~Compartment ROC from a test sweep, with the area up to 5\% from \cref{tab:inspection} (class-wide curves, area 39.3--39.4, omitted). (d)~Recall against cost at the fixed-cost (square), 95\% (circle) and 98\% (triangle) development cutoffs; hollow: seed~2; the two class-wide seeds overlap at fixed cost; the axis is broken between 1 and 11.}
 \label{fig:maps}
 \end{figure}
 
@@ -65,7 +65,7 @@ To separate the effect of the target from that of the rule-aware edits, we also 
 \label{sec:scratch}
 \begin{table*}[t]
 \centering
-\caption{\textbf{SALAD's full 70{,}000-step recipe from random initialization} (pushpins). Matched trays: spread (\%), cost $C$ and target recall $R$ (\%) at the 95\% development cutoff, and pooled $C$. Real defects: AU-sPRO up to 5\% FPR, overall and on extra pins (\%), defective compartments found (\%) and intact compartments opened per faulty tray at the development-fixed operating point, and image AUROC (\%). Bold: best retrained head.}
+\caption{SALAD's full 70{,}000-step recipe from random initialization (pushpins). Matched trays: spread (\%), cost $C$ and target recall $R$ (\%) at the 95\% development cutoff, and pooled $C$. Real defects: AU-sPRO up to 5\% FPR, overall and on extra pins (\%), defective compartments found (\%) and intact compartments opened per faulty tray at the development-fixed operating point, and image AUROC (\%). Bold: best retrained head.}
 \label{tab:replication}
 \small\setlength{\tabcolsep}{5pt}
 \input{tables/replication.tex}
@@ -77,7 +77,7 @@ To test the target under SALAD's complete training, we retrain the whole composi
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{native_results.pdf}
-\caption{\textbf{Real pushpin defects.} (a)~sPRO against false-positive rate (1.6k-step continuations; dashed: seed 2). (b)~Defective compartments found against intact compartments opened per faulty tray at the scene cutoff and pooled queue fixed on development trays; hollow: seed 2; whiskers: 95\% intervals over test images.}
+\caption{Real pushpin defects. (a)~sPRO against false-positive rate (1.6k-step continuations; dashed: seed 2). (b)~Defective compartments found against intact compartments opened per faulty tray at the scene cutoff and pooled queue fixed on development trays; hollow: seed 2; whiskers: 95\% intervals over test images.}
 \label{fig:native}
 \end{figure}
 On the 91 real logical pushpin defects, the from-scratch footprint heads reach an AU-sPRO of \scrSproFP\% against \scrSproCW\% for their class-wide twins (\scrGain{} points; \cref{tab:replication}). At the development-fixed operating point they find \scrOpR\% of the defective compartments while opening \scrOpW{} intact compartments per faulty tray (\cref{fig:native}b). The released map's threshold finds \opRelThrR\% and opens \opRelThrW, and its top-three list opens \opRelListW{} but finds only \opRelListR\%. Against this list, the strongest policy on the released map, the footprint heads find \scrVsListR{} points more and open \scrVsListW{} fewer, in both seeds, with no consistent cost in image AUROC (\scrAucFP\% against \scrAucCW\%).
