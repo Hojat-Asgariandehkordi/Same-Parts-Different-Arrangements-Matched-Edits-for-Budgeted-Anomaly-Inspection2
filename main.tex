@@ -216,20 +216,13 @@ The reason is that the fault alters the released map across almost the entire tr
 
 \subsection{Effect of footprint supervision}
 \label{sec:footprint}
-Fine-tuning with footprint targets reduces the cost at 95\% recall from 11.07 untouched compartments to 0.20 and 0.45 in the two seeds, at an achieved recall of 95.3\% and 96.0\% (\cref{tab:inspection}). The paired reductions relative to the released model are 10.88 [10.12, 11.56] and 10.62 [9.86, 11.31] compartments, and relative to the class-wide fine-tunes, the pre-specified control, 12.80 [12.72, 12.87] and 12.55 [12.45, 12.65] (\cref{fig:forest}). Every fault and vacancy still raises an alarm, and all recall differences have intervals that include zero and remain above the 5-point floor. The reduction holds on oracle maps and on both fixed halves of the photographs (supplement). \Cref{fig:maps} illustrates a typical case in which the released map queues all 13 untouched compartments and the footprint map queues none.
+Fine-tuning with footprint targets reduces the cost at 95\% recall from 11.07 untouched compartments to 0.20 and 0.45 in the two seeds, at an achieved recall of 95.3\% and 96.0\% (\cref{tab:inspection}). The paired reductions relative to the released model are 10.88 [10.12, 11.56] and 10.62 [9.86, 11.31] compartments, and relative to the class-wide fine-tunes, the pre-specified control, 12.80 [12.72, 12.87] and 12.55 [12.45, 12.65] (supplement, paired-effects figure). Every fault and vacancy still raises an alarm, and all recall differences have intervals that include zero and remain above the 5-point floor. The reduction holds on oracle maps and on both fixed halves of the photographs (supplement). \Cref{fig:maps} illustrates a typical case in which the released map queues all 13 untouched compartments and the footprint map queues none.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{guidance_maps.pdf}
 \caption{\textbf{Footprint supervision empties the queue.} (a,b)~Extracted maps of the median fault (greyscale); cyan: targets, pink: untouched compartments at or above the pre-specified 95\% cutoff $t_c$. (c)~Compartment ROC from a test sweep, with the area up to 5\% from \cref{tab:inspection} (class-wide curves, area 39.3--39.4, omitted). (d)~Recall against cost at the fixed-cost (square), 95\% (circle) and 98\% (triangle) development cutoffs; hollow: seed~2; the two class-wide seeds overlap at fixed cost; the axis is broken between 1 and 11.}
 \label{fig:maps}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{paired_forest.pdf}
-\caption{\textbf{Footprint targets remove 10 to 13 untouched compartments per fault without losing recall.} Paired differences on extracted maps, footprint minus each comparator, at the pre-specified cutoffs, with 95\% intervals; hollow: seed~2; bold: the primary contrast. Dotted: pre-specified thresholds ($-1$ compartment, $-5$ and $+5$ pp). $\dagger$: this seed's control fails the competence criterion (\cref{sec:upstream}). Oracle maps and values: supplement Tabs.~3 and 8.}
-\label{fig:forest}
 \end{figure}
 
 The advantage holds at the other operating points. At the fixed-cost cutoff, the footprint heads recover 100.0\% and 98.2\% of targets at achieved costs of 0.38 and 0.57, compared with 81.9\% at 0.30 for the released model. The region area increases from 81.6\% to 96.3\% and 89.6\%; this ranking-based summary agrees in direction but does not reveal how much shorter the calibrated queue becomes.

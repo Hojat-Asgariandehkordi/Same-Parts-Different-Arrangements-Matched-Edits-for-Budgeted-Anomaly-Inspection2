@@ -52,6 +52,15 @@ The any-pixel summary counts a compartment as changed whether it contains a sing
 
 \section{Paired fine-tuning}
 \label{sec:supp_ft800}
+This section gives the details of the paired fine-tunes in Sec.~4.2 of the main paper; \cref{fig:forest_supp} shows their paired effects.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{paired_forest.pdf}
+\caption{\textbf{Footprint targets remove 10 to 13 untouched compartments per fault without losing recall.} Paired differences on extracted maps, footprint minus each comparator, at the pre-specified cutoffs, with 95\% intervals; hollow: seed~2; bold: the primary contrast. Dotted: pre-specified thresholds ($-1$ compartment, $-5$ and $+5$ pp). $\dagger$: this seed's control fails the competence criterion (Sec.~4.3 of the main paper). Oracle maps and values: supplement Tabs.~3 and 8.}
+\label{fig:forest_supp}
+\end{figure}
+
 \paragraph{Target construction.}
 We build on the released SALAD code (revision \texttt{753ba94}) and checkpoints~\cite{fucka2025}. When a part is inserted, the function \texttt{copy\_label\_diff\_img} writes the donor footprint into the edited six-channel map and returns the entire resulting class plane as the discriminative target; \texttt{copy\_and\_change} takes the union of this insertion mask and the same-image relabelling mask. The reconstruction objective uses the clean source labels with multiclass focal and Dice losses and is unaffected by these targets. The discriminative objective is
 \[
