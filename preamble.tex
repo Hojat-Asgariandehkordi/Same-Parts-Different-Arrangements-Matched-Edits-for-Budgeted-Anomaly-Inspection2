@@ -63,3 +63,7 @@
 \newcommand{\T}{\mathcal{T}}
 \newcommand{\Q}{\mathcal{Q}}
 \input{tables/numbers}
+% \suppref{label}{text}: a cross-reference into the supplementary material. When sec/X_suppl is
+% compiled into the same PDF it prints the usual \cref; when the supplement is left out (main paper
+% only) it prints the given text instead of "??".
+\newcommand{\suppref}[2]{\ifcsname r@#1\endcsname\cref{#1}\else #2\fi}
