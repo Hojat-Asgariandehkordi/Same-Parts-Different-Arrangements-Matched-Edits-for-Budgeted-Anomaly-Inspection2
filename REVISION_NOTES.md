@@ -42,6 +42,10 @@ version (repo `...-Inspection`, commit `5a5ebeb`), which is unchanged.
   macros are appended at its end, where the kit says to import them.
 - `main.tex` is the kit's `main.tex` with only the title, author and `\input{sec/...}` lines changed; the text lives in
   `sec/0_abstract.tex` ... `sec/6_llm_statement.tex`, and the bibliography is `main.bib`, as in the kit.
-- The supplement is the kit's `sec/X_suppl.tex` (`\clearpage`, `\setcounter{page}{1}`, `\maketitlesupplementary`);
-  `supplement.tex` is the kit's `main.tex` skeleton that compiles it on its own.
+- The supplement is the kit's `sec/X_suppl.tex` (`\clearpage`, `\setcounter{page}{1}`, `\maketitlesupplementary`),
+  included at the end of `main.tex` exactly where the kit places it, so `main.pdf` holds the paper and the supplementary
+  material in one file (31 pages: paper pp. 1-8, references pp. 9-10, supplement from p. 11 with its own page numbers).
+  The separate `supplement.tex` was removed; the duplicate LLM statement in the supplement was dropped. Main-text
+  pointers to the supplement are now live cross-references.
+- Before submission, split the PDF at the supplement if CVPR asks for separate files (the kit's warning in `main.tex`).
 - With microtype off the main text and LLM statement still end on page 8; references start on page 9.
