@@ -261,12 +261,12 @@ def pipeline():
     # ---- calibration box (top right) ------------------------------------
     ax.add_patch(FancyBboxPatch((3.78, 1.53), 3.06, 0.88, boxstyle="round,pad=0,rounding_size=0.05",
                                 fc="#eef1f8", ec=C["calib"], lw=0.8, zorder=0))
-    ax.text(3.86, 2.37, "Fixed on development data (never on test)", fontsize=8, fontweight="bold",
+    ax.text(3.86, 2.37, "Fixed on training data (never on test)", fontsize=8, fontweight="bold",
             color=C["calib"], va="top")
     ax.text(3.86, 2.17, "$t_s$: 63rd smallest maximum of 69 normal photos\n"
                        "      ($\\leq$10% of normal trays raise an alarm)\n"
                        "$t_c$: highest cutoff that finds 95% of the\n"
-                       "      targets of 69 matched development faults",
+                       "      targets of 69 matched training faults",
             fontsize=7.5, va="top", linespacing=1.15)
 
     # ---- test lane (bottom) ---------------------------------------------

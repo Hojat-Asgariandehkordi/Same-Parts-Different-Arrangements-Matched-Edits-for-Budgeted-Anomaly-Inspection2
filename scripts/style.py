@@ -38,7 +38,7 @@ C = {
     "target": "#00b4d8",
     "queued": "#e7298a",
     "train": "#1b8a6b",      # "what we change"
-    "calib": "#3d5a99",      # "fixed on development data"
+    "calib": "#3d5a99",      # "fixed on training data"
     "alarm": "#c0392b",
     "grey": "#555555",
     "light": "#d9d9d9",

@@ -3,7 +3,7 @@
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{pipeline.pdf}
-\caption{Only the training target changes; everything at test time is fixed in advance. Training (green) differs only in the target mask. At test, a part map comes from a U-Net (\emph{extracted}) or from the edited label map (\emph{oracle}); the scene alarm ($t_s$) and the compartment cutoff ($t_c$) are fixed on development data (blue). The values are illustrative and match the example under \cref{eq:rc} ($R=2/2$, $C=3$). Network icons created in BioRender.}
+\caption{Only the training target changes; everything at test time is fixed in advance. Training (green) differs only in the target mask. At test, a part map comes from a U-Net (\emph{extracted}) or from the edited label map (\emph{oracle}); the scene alarm ($t_s$) and the compartment cutoff ($t_c$) are fixed on training data (blue). The values are illustrative and match the example under \cref{eq:rc} ($R=2/2$, $C=3$). Network icons created in BioRender.}
 \label{fig:pipeline}
 \end{figure*}
 
@@ -17,7 +17,7 @@ We use all 138 held-out normal pushpin photographs. Using the released class mas
 
 Each variant has a target set $\T_i$ of compartments that require inspection: $\T_i=\{a_i,b_i\}$ for a fault, $\T_i=\{a_i\}$ for a vacancy, and $\T_i=\emptyset$ for a source or a sham, where every queued compartment is a false mark. Since the vacancy-only edit retains the empty half of the fault, comparing the two isolates the effect of the additional pin.
 
-Every variant is scored through two interfaces with identical detector weights. The \emph{oracle} interface moves the pin directly in the released label map, while the \emph{extracted} interface re-segments every RGB variant, including the source, with an independent U-Net trained only on normal training photographs (97.3\% development pin IoU). Since a deployed system never observes ground-truth labels, we report the extracted interface unless stated otherwise.
+Every variant is scored through two interfaces with identical detector weights. The \emph{oracle} interface moves the pin directly in the released label map, while the \emph{extracted} interface re-segments every RGB variant, including the source, with an independent U-Net trained only on normal training photographs (97.3\% training pin IoU). Since a deployed system never observes ground-truth labels, we report the extracted interface unless stated otherwise.
 
 \begin{figure*}[t]
 \centering
@@ -51,11 +51,11 @@ so that the targets of a tray without an alarm count as missed. Over $n$ faults,
 \end{equation}
 \ie, the fraction of target compartments that are queued and the mean number of untouched compartments queued per fault, which ranges from 0 to 13. For example, a fault whose queue contains both targets and three other compartments contributes $2/2$ to recall and $3$ to cost.
 
-The compartment cutoff is fitted on 69 matched \emph{development} faults $\mathcal{D}$, constructed in the same way from validation photographs, and never on test data. Let $G=\{g_j(e): j\in\mathcal{D},\,e\in\T_j\}$ be the multiset of the $2\times69=138$ development target scores, with $g_j(e)=0$ for a fault without an alarm, and let $G^{(k)}$ denote its $k$-th largest element. The \emph{95\% cutoff} is the highest threshold that attains 95\% target recall on these faults,
+The compartment cutoff is fitted on 69 matched \emph{training} faults $\mathcal{D}$, constructed in the same way from validation photographs, and never on test data. Let $G=\{g_j(e): j\in\mathcal{D},\,e\in\T_j\}$ be the multiset of the $2\times69=138$ training target scores, with $g_j(e)=0$ for a fault without an alarm, and let $G^{(k)}$ denote its $k$-th largest element. The \emph{95\% cutoff} is the highest threshold that attains 95\% target recall on these faults,
 \begin{equation}
  t_c^{95}=G^{(\lceil 0.95\,|G|\rceil)}=G^{(132)}.
  \label{eq:tc}
-\end{equation} A \emph{fixed-cost cutoff} instead admits at most 0.5 untouched compartments per development fault and is the 35th largest untouched score, since $\lfloor0.5\cdot69\rfloor+1=35$; for this cutoff the comparison in \cref{eq:queue} is strict ($g_i(e)>t_c$). Both cutoffs are fitted separately for each map and interface, and on test data we report the achieved $R$ and $C$ together with alarm rates on all four variants.
+\end{equation} A \emph{fixed-cost cutoff} instead admits at most 0.5 untouched compartments per training fault and is the 35th largest untouched score, since $\lfloor0.5\cdot69\rfloor+1=35$; for this cutoff the comparison in \cref{eq:queue} is strict ($g_i(e)>t_c$). Both cutoffs are fitted separately for each map and interface, and on test data we report the achieved $R$ and $C$ together with alarm rates on all four variants.
 
 We also report how often both targets are the two highest-scoring compartments (\emph{top 2}), the mean rank of the second target, a top-$k$ \emph{list} that queues the $k$ highest compartments with $k$ fitted like $t_c$, and, as a counterpart to sPRO~\cite{bergmann2022}, the \emph{region area}: target recall integrated up to a false-compartment rate of 0.05 over all compartments, with untouched, source and sham compartments as negatives. Region area is computed on test data without the scene alarm, so it measures ranking rather than the cost at an operating point.
 
@@ -63,7 +63,7 @@ We also report how often both targets are the two highest-scoring compartments (
 \caption{Calibrated inspection queue}
 \label{alg:queue}
 \begin{algorithmic}[1]
-\Require map model $f$; cells $\E$; normal validation photos $\mathcal{V}$; development faults $\mathcal{D}$ with targets $\T_j$
+\Require map model $f$; cells $\E$; normal validation photos $\mathcal{V}$; training faults $\mathcal{D}$ with targets $\T_j$
 \State $t_s\gets$ 63rd smallest of $\{\max_p f(m_v)(p)\}_{v\in\mathcal{V}}$ \Comment{$|\mathcal{V}|=69$}
 \State $G\gets\{g_j(e): j\in\mathcal{D},\ e\in\T_j\}$, with $g_j(e)=0$ if $j$ has no alarm
 \State $t_c\gets$ the $\lceil 0.95\,|G|\rceil$-th largest value of $G$ \Comment{95\% cutoff}
@@ -107,4 +107,4 @@ The primary comparison is the paired difference in cost between the footprint an
  \Delta C=\frac{1}{n}\sum_{i=1}^{n}\Bigl(|\Q_i^{\text{fp}}\setminus\T_i|-|\Q_i^{\text{cw}}\setminus\T_i|\Bigr),
  \label{eq:delta}
 \end{equation}
-where $\Q_i^{\text{fp}}$ and $\Q_i^{\text{cw}}$ are the queues of the same fault under each policy at its own 95\% cutoff; negative values favour the footprint policy. Before testing, we specified that a useful reduction must remove at least one untouched compartment with a 95\% interval excluding zero, while keeping the achieved recall at or above 90\% and within 5 points of the control, the fault and vacancy alarm rates at or above 95\% and within 3 points, and the increase in sham alarms below 5 points. Attributing the effect to the target additionally requires that the class-wide control meet a \emph{competence criterion} on development data: alarm rates and compartment AUROC of at least 90\%. Intervals are computed from 4,000 bootstrap resamples of the original photographs, in which all variants, policies and interfaces of a photograph are resampled together, and are conditional on the fitted models and cutoffs. Two seeds and two fixed halves of the test photographs (63 and 75) assess stability. On the real logical defects of MVTec LOCO we report AU-sPRO up to a 5\% false-positive rate~\cite{bergmann2022}, re-implemented at map resolution (within 0.7 points of the official code on four heads), and, for pushpins, $R$ and $C$ at the development-fixed operating point, where a compartment is a target when its annotation covers at least 20 pixels. These use parameters refit on development relocations pooled with vacancies, since real trays have one or several faulty compartments.
+where $\Q_i^{\text{fp}}$ and $\Q_i^{\text{cw}}$ are the queues of the same fault under each policy at its own 95\% cutoff; negative values favour the footprint policy. Before testing, we specified that a useful reduction must remove at least one untouched compartment with a 95\% interval excluding zero, while keeping the achieved recall at or above 90\% and within 5 points of the control, the fault and vacancy alarm rates at or above 95\% and within 3 points, and the increase in sham alarms below 5 points. Attributing the effect to the target additionally requires that the class-wide control meet a \emph{competence criterion} on training data: alarm rates and compartment AUROC of at least 90\%. Intervals are computed from 4,000 bootstrap resamples of the original photographs, in which all variants, policies and interfaces of a photograph are resampled together, and are conditional on the fitted models and cutoffs. Two seeds and two fixed halves of the test photographs (63 and 75) assess stability. On the real logical defects of MVTec LOCO we report AU-sPRO up to a 5\% false-positive rate~\cite{bergmann2022}, re-implemented at map resolution (within 0.7 points of the official code on four heads), and, for pushpins, $R$ and $C$ at the training-fixed operating point, where a compartment is a target when its annotation covers at least 20 pixels. These use parameters refit on training relocations pooled with vacancies, since real trays have one or several faulty compartments.

@@ -25,7 +25,7 @@ INSPECTION_EXTRACTED = {
 }
 
 # Alternative operating points, extracted. Source: tables/other_queues.tex
-# (98% recall cutoff and 0.5-cost cutoff, both set on development)
+# (98% recall cutoff and 0.5-cost cutoff, both set on training)
 OPERATING_EXTRACTED = {
     #                       rec98  unt98  cost_rec cost_unt
     "Released, max":       (98.9, 12.56, 81.9, 0.30),

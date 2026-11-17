@@ -188,7 +188,7 @@ def guidance():
               title_fontsize=7)
     ax.set_title("Compartment ROC", fontsize=8)
     style.panel(ax, "c", x=-0.3, y=1.04)
-    # (d) recall versus cost at three development cutoffs, broken x axis
+    # (d) recall versus cost at three training cutoffs, broken x axis
     axl, axr = fig.add_subplot(bot[1]), fig.add_subplot(bot[2])
     pol = [("Released, max", C["released"], False), ("Class-wide, seed 1", C["classwide"], False),
            ("Class-wide, seed 2", C["classwide"], True), ("Footprint, seed 1", C["footprint"], False),
