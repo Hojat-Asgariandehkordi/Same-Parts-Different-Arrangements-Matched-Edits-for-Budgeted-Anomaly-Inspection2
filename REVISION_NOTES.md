@@ -49,3 +49,12 @@ version (repo `...-Inspection`, commit `5a5ebeb`), which is unchanged.
   pointers to the supplement are now live cross-references.
 - Before submission, split the PDF at the supplement if CVPR asks for separate files (the kit's warning in `main.tex`).
 - With microtype off the main text and LLM statement still end on page 8; references start on page 9.
+
+## Supplementary material (after main-paper submission, 2026-11-19)
+- `supplement.tex` compiles `sec/X_suppl.tex` on its own with the kit settings (20 pages incl. references).
+- Lettered appendices A-V in a reading order: protocol and matched edits (A-C); the four training recipes
+  (D 800-step rule-aware fine-tuning, E 800-step continuation, F 1.6k-step identical-input continuation,
+  G training from initialization); insertion probe and real defects (H-K); appearance detectors and full SALAD
+  (L-N); transfer checks: second rule and part graphs (O-T); exploratory cardiac query (U); data use (V).
+- An overview paragraph maps the appendices to main-paper sections; references to the main paper use its
+  printed numbers ("main Sec. 4.2", "main Tab. 2"). "Sections moved from the main paper" framing removed.

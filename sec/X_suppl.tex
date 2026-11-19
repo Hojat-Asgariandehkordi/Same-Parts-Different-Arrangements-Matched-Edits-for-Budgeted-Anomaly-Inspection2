@@ -2,9 +2,12 @@
 \setcounter{page}{1}
 \maketitlesupplementary
 
+\appendix
+\noindent This supplementary material gives the protocol, data construction, training recipes and complete results behind the main paper; section, figure and table numbers of the main paper are cited as such. \Cref{sec:supp_protocol,sec:supp_queue,sec:supp_photo} define the inspection protocol and the matched edits. \Cref{sec:supp_ft800,sec:upstream_supp,sec:supp_cont,sec:supp_scratch} describe the four training recipes compared in the main paper: rule-aware fine-tuning and continuation of the original recipe (800 steps each; main Secs.~4.2 and 4.3), identical-input continuations (1.6k steps) and training from initialization (70k steps; main Secs.~4.4--4.7). \Cref{sec:supp_insertion,sec:supp_native,sec:supp_op,sec:supp_loco} report the insertion probe and real logical defects, \cref{sec:supp_appearance,sec:supp_full,sec:supp_fusion} the appearance detectors and SALAD's full system, and \cref{sec:transfer,sec:graph,sec:supp_graphscope} the two transfer checks summarized in main Sec.~4.7, a second logical rule and graphs of parts. Every policy, seed and interface that was evaluated is reported.
 
 \section{Inspection protocol}
-This supplement provides the decision rules, training details and complete results underlying the main paper. The inspection protocol, comprising the cutoffs, the endpoints and the decision criteria, was specified before any test score was examined. The upstream-only continuation (\cref{sec:upstream_supp}) was added before test scoring, after training data showed that the class-wide rule-aware heads did not meet the compartment-ranking criterion, and the eligibility rules and edits of the juice experiment were fixed before any juice photograph was scored. All policies, seeds and interfaces are reported.
+\label{sec:supp_protocol}
+The inspection protocol, comprising the cutoffs, the endpoints and the decision criteria, was specified before any test score was examined. The upstream-only continuation (\cref{sec:upstream_supp}) was added before test scoring, after training data showed that the class-wide rule-aware heads did not meet the compartment-ranking criterion, and the eligibility rules and edits of the juice experiment were fixed before any juice photograph was scored. All policies, seeds and interfaces are reported.
 
 \paragraph{Scene and compartment cutoffs.}
 The scene cutoff is the 63rd smallest maximum among 69 normal validation maps, and an alarm requires a strictly greater score. The compartment cutoff at recall $r$ is the $\lceil 138r\rceil$-th largest training target score among scenes that raise an alarm; both the vacated and the recipient compartment are included, even when one of them is difficult to localize, and the comparison is inclusive. If fewer than $\lceil 138r\rceil$ targets remain after the scene alarm, the cutoff is set to zero and the operating point is reported as infeasible. The fixed-cost cutoff is the $(\lfloor0.5\,n_{\rm dev}\rfloor+1)$-th largest score among the untouched compartments of training faults that raise an alarm, with a strict comparison, which admits at most 0.5 untouched compartments per training fault; it is likewise set to zero if too few negatives remain. Any compartment queued on a source or a sham counts as a false mark, and for the vacancy-only variant the vacated compartment is the only positive. Rank statistics are computed on the raw maps before the scene alarm, with exact ties broken by compartment index.
@@ -16,11 +19,35 @@ The primary endpoint is the difference in untouched compartments queued per extr
 The region area uses binary saturation: each compartment is counted once, when its score crosses a common threshold. Positives are the two target compartments of each fault; negatives are its thirteen untouched compartments together with the 30 compartments of the corresponding source and sham, or only the 13 untouched compartments for the fault-only variant. Recall is interpolated linearly through ties and integrated up to a pooled false-compartment rate of 0.05, and the area is divided by 0.05. Both curves are descriptive sweeps over the test set, whereas the scene and compartment cutoffs are fixed on training data; bootstrap replicates resample complete photo groups and recompute the pooled sweep. In contrast to the official pixel-level AU-sPRO, which allows area-based saturation inside ambiguous native regions~\cite{bergmann2022}, our compartments carry an exact label and constitute indivisible units of inspection.
 
 The any-pixel summary counts a compartment as changed whether it contains a single large change or a broad one. The complementary area fraction counts pixels whose absolute change is at least 0.5 on the same 13 compartments, weighted by compartment area within each original photograph, and we additionally report per-compartment upper quantiles averaged over compartments. These comparisons with the source serve diagnosis only and do not enter the inspection decision.
+\section{Queue definitions for pooled trays and real defects}
+\label{sec:supp_queue}
+\label{sec:supp_defs}
+\paragraph{Scene gate.} The scene cutoff is the 63rd smallest map maximum of the 69 unedited training trays (the split-conformal $\lceil 70\times0.9\rceil$ order statistic), and a tray alarms when its maximum is strictly greater. Under exchangeability this bounds the marginal false-alarm probability of a new normal tray by 10\%; it does not bound the realized rate on a particular test set.
+\paragraph{Queues.} Compartments are the 15 cells of the tray grid, and a compartment's score is the maximum of the map inside it. Only an alarmed tray opens a queue. The threshold is the highest cutoff at which at least 95\% of training targets on alarmed trays are queued; the list length is the smallest $k$ with the same property (ties broken by compartment index); the relative cutoff is the largest $\alpha$ on a 0.001 grid with the same property. Pooled trays contain the 69 training relocations and the 69 training vacancies, and every parameter is refit on them. On real defects we use the pooled parameters of each head, because real trays have one or several faulty compartments.
+\paragraph{Diagnostics.} Change statistics compare an edited map with its own source on the 13 compartments untouched by the relocation, for every edit, so the three edits are compared on identical cells. The cell analogue of low-FPR sPRO integrates target-compartment recall against the false-compartment rate up to 5\% and normalizes; ``fault'' uses the 13 untouched compartments of each faulty tray as negatives and ``all'' adds every compartment of the unedited source and the valid sham.
+\section{Matched edits and the part-map extractor}
+\label{sec:supp_photo}
+We use the official MVTec LOCO photographs and fix the 372 good training, 69 good validation and 138 good test photographs before any experiment. The training photographs are split pseudo-randomly into 302 for fitting and 70 held out for model selection, and the test photographs into two fixed halves of 63 and 75. No test score or activation enters candidate selection. The authors' released maps determine the five-column, three-row tray geometry. On the 256-square grid we use $x=(8,57,105,153,201,249)$ and $y=(13,91,166,241)$. Retained pin labels are eight-connected class-2 components of at least 75 pixels. A qualifying source has one per cell. This filter is specific to the compartment experiment.
 
-\input{sections/moved_transfer.tex}
-\input{sections/v2_analyses.tex}
+The RGB cutout is the pin-class component with the neighboring bright pixels from a two-pixel halo, with enclosed holes filled. Selection requires cell clearance and an available local dark background. We fill the original position with the per-channel median of the local dark class-4 ring. Destinations have a one-pixel cell margin, zero overlap with the source cutout or other pins, and at least a two-pixel pin clearance. The oracle component moves entirely onto class 4. The two translations have the same integer squared displacement and equal paste area. The displacement range and intensity thresholds were fixed on validation photographs. In test the moves range from 19.2 to 51.4 pixels. All 138 candidate images meet the edit rules. Sham and fault change exactly the same number of decoded RGB pixels in each pair. Source-pixel repaint is exact. All test masks retain the same class histogram for source, sham and fault. Each move preserves the pin-class component count. All four RGB arms use original camera backgrounds. The held-out scenes contain no generated textures or objects.
 
-\section{Paired fine-tuning}
+The RGB-only extractor is a two-level U-Net with widths 16, 32 and 64, SiLU, group normalization, max pooling and nearest-neighbor upsampling. It predicts six channels. The training label is the released map for each train/good photograph. Weighting is inverse square-root class frequency with floor 0.01. AdamW runs with seed 74817, learning rate $0.001$, decay $0.001$, batch size 12, and at most 30 epochs, selecting the lowest weighted loss on the 70 held-out images. The selected epoch is 30. Training pin IoU is 97.3\% against the released labels and all 70 training images have the correct retained cell counts. On held-out fault maps, pin IoU against the intervened oracle maps is 97.2\%. We keep extraction discrepancies in the test denominator. The extracted arm has its own validation cutoff. Its comparison with the oracle arm includes the effect of re-segmentation and recalibration.
+
+
+\paragraph{Reference regions and scene operation.}
+The two affected compartments are a rule-based coarse spatial reference. The vacant and occupied compartments need no pixel-level anomaly outline. For each cell we take the maximum of either the edited output or the absolute change from source. Even the change-based cell rank is 98.4\% on oracle maps while 90.3\% of untouched cells have a large absolute change. The matched deletion, which leaves the same vacancy, keeps changes above $0.5$ to 2.9\% of those same untouched cells. The paired difference is 87.4 points [82.4, 91.9] for oracle maps and 86.6 [81.4, 91.2] after extraction. The full threshold curve is Fig.~4 of the main paper. These are changes in the spatial output, whereas scene-level maxima and cutoff decisions are a separate measurement.
+
+The image score is the official maximum sigmoid output. The validation IQRs are 0.00974 (oracle) and 0.01060 (extracted). The raw cutoffs are 0.15802 and 0.17097. The rule comparator sums the absolute deviation from one pin per compartment and adds retained out-of-grid pins. Its cutoff is zero on both paths. The comparator uses the same labels and the same validation rule. On re-extracted maps it yields zero sham alarms (exact 95\% upper bound 2.6\%), while retaining all 138 fault alarms. \Cref{tab:halves} reports the held-out halves and the paired effect. Figure selection uses the case closest to the median oracle fault-minus-sham score. There were zero missed faults. The second row uses the first hash-ordered alarmed sham, whose source also alarms.
+
+\begin{table*}[t]
+\centering
+\caption{Fixed photo halves for the matched photo edits. Sham, Fault and Del. count alarms. All fault and deletion recalls are 100\% on the respective support. Bootstrap intervals for tied all-success contrasts are conditional on the sample.}
+\label{tab:halves}
+\scriptsize
+\setlength{\tabcolsep}{3.3pt}
+\input{tables/visual_halves.tex}
+\end{table*}
+\section{Rule-aware fine-tuning (800 steps)}
 \label{sec:supp_ft800}
 This section gives the details of the paired fine-tunes in Sec.~4.2 of the main paper; \cref{fig:forest_supp} shows their paired effects.
 
@@ -84,8 +111,7 @@ Training uses 372 normal training photographs and 371 eligible rule-aware traini
 \setlength{\tabcolsep}{4pt}
 \input{tables/realized_cost.tex}
 \end{table*}
-
-\section{Continuation of the original recipe}
+\section{Continuation of the original recipe (800 steps)}
 \label{sec:upstream_supp}
 The rule-aware class-wide heads detect all faults and vacancies but fail the localization criterion. We therefore evaluate a separately specified continuation in which the augmented slot contains only the original synthetic edit families, with the released head as the reference. A paired effect in this setting identifies the influence of the target policy during continued training. A full counterfactual of the released model would additionally retrain the reconstruction network from the start of the original 70,000-step schedule. Since the two policies mark different numbers of pixels, the positive area remains part of the intervention.
 \input{tables/upstream_text.tex}
@@ -159,8 +185,119 @@ The rule-aware class-wide heads detect all faults and vacancies but fail the loc
 \setlength{\tabcolsep}{4pt}
 \input{tables/changes_upstream.tex}
 \end{table*}
+\section{Identical-input continuations (1.6k steps)}
+\label{sec:supp_cont}
+\label{sec:supp_ft}
+For each category and seed, we load the released composition weights, freezes the released reconstruction autoencoder, and copies the discriminative U-Net into a class-wide and a footprint arm. Both arms consume one prefetched stream of 1{,}600 SALAD steps. Each step takes the next map of a per-epoch permutation of the official good training maps and its clean copy, and with probability 1/2 applies one of the four released edit families with a uniformly drawn donor map. The loss is SALAD's $5\times$ sigmoid focal plus L1 on the discriminative map. Adam ($10^{-5}$, weight decay $10^{-5}$) runs with a tenfold decay at step 1{,}520, and the final weights are used. This matches the 800 synthetic edits and 3:1 clean-to-edited ratio of the 800-step fine-tunes of \cref{sec:supp_ft800}. The arms differ only in the insertion target, and we verify that both receive the same input sequence. In the released generator, an insertion's target covers a median of 16 times the pasted area (median of per-edit ratios over 204 replayed pushpin insertions; the medians of the two areas themselves are 19{,}800 and 416 pixels).
+\section{Training from initialization (70k steps)}
+\label{sec:supp_scratch}
+\paragraph{Recipe.} We reproduce the composition part of the released SALAD training procedure. The autoencoder and discriminative U-Net are the released architectures, initialized from scratch with the seed. Each step takes the next map of a per-epoch random permutation of the official good training maps (372 for pushpins, 360 for screw bag) and a uniformly drawn donor map. With probability 1/2 one of the four released edit families is applied: Perlin-shaped relabeling, same-image component relabeling, rotated insertion of a donor component, or relabeling plus insertion. The batch is this map and its clean copy. The autoencoder reconstructs the clean map from the (possibly edited) input with the released multiclass focal loss ($\gamma=2$, released class weights) plus the released Dice loss. The U-Net receives the one-hot input and the reconstruction and is trained with $5\times$ mean sigmoid focal loss plus mean L1 against the discriminative target. Both networks use Adam at $10^{-5}$ with weight decay $10^{-5}$ and a tenfold decay at step 66{,}500 of 70{,}000. The appearance branches of SALAD are trained jointly in the original code but share no parameters or targets with the composition branch, so training the composition branch alone leaves its gradients unchanged up to the random stream. The Perlin-shaped edit uses a standard image rotation in place of the original augmentation library, as in the 800-step fine-tunes (\cref{sec:supp_ft800}).
+\paragraph{The only difference between arms.} The released insertion edit pastes a rotated donor component and returns the entire channel of its class after pasting as the target. The \emph{class-wide} arm uses that target, as released. The \emph{footprint} arm uses the pasted donor mask captured before the expansion. For relabel-plus-insertion the relabel mask is united with either insertion target. Perlin and relabel targets are identical in both arms.
+\paragraph{Identical inputs.} For each seed, the two networks are initialized once, copied to both arms, and both arms receive the same stream of training maps and edits. We record checksums of the full sequence of input maps, clean maps and both target sequences, and verify that the two arms of a seed receive identical inputs.
+\paragraph{Scoring.} The final models (step 70{,}000) are scored on the oracle and re-extracted maps of every training and test edit, on the official native test maps, and in the insertion probe. Scene and spatial cutoffs are fit on training before test maps are read, exactly as for every other head.
+\paragraph{Pre-specified endpoints.} The protocol fixed the primary endpoint before any from-initialization head was scored. That endpoint is footprint minus class-wide wasted inspections at the 95\% training threshold on the re-segmented path, with a useful effect defined as at least one compartment fewer and an interval excluding zero. It also fixed guardrails on scene recall, achieved target recall and valid-sham alarms, and a reproduction check of the released behaviour by the class-wide arm. \scratchEndpoints
+\paragraph{Results.} \Cref{tab:replication_supp} repeats the main-paper replication table for reference.
+\begin{table*}[t]
+\centering
+\caption{Training from initialization (main Tab.~2, repeated for reference).}
+\label{tab:replication_supp}
+\small
+\input{tables/replication.tex}
+\end{table*}
+\section{Instance-insertion probe}
+\label{sec:supp_insertion}
+For a category with a multi-instance part class we take every official validation (training) and test good part map and paste one intact instance of that class from an official training map. Donor instances are connected components of the class with an area in the interquartile range of training instances (pushpins, screw bag) or between 2{,}000 and 4{,}500 pixels (a single fruit in breakfast box, whose fruits usually merge into one region). The placement is drawn uniformly at random, with a fixed seed per image, among positions where the whole donor lies on the substrate on which the class normally rests (compartment floor, bag, or the cereal side of the box), at least three pixels from existing instances of the class. Pushpins then have an extra pin in a compartment, screw bags an extra part, and breakfast boxes a fruit in the wrong compartment; all three violate the published rules. ``Same-class any'' is the fraction of untouched same-class instances whose map changes by at least 0.5 somewhere, ``same-class area'' the fraction of their pixels that do, and ``other classes'' the same fraction over pixels of the remaining part classes more than ten pixels from the paste. Splicing connectors were excluded because their contacts leave no free substrate for an extra instance.
+\begin{table*}[t]
+\centering
+\caption{Instance-insertion probe on part maps (composition branch). Instance AUROC ranks the pasted instance against the untouched instances of its class.}
+\label{tab:insertion}
+\footnotesize\setlength{\tabcolsep}{4pt}
+\input{tables/insertion.tex}
+\end{table*}
+\section{Localization of real logical defects}
+\label{sec:supp_native}
+\begin{table*}[t]
+\centering
+\caption{Localization of real logical defects by category (AU-sPRO up to 5\% FPR, \%). Class-wide and footprint heads continue the released head for 1.6k steps on identical inputs; the last two columns are paired differences with 95\% bootstrap intervals. Bold: best head in each row.}
+\label{tab:native_main}
+\small\setlength{\tabcolsep}{4.6pt}
+\input{tables/native.tex}
+\end{table*}
 
-\section{Full SALAD and the liquid--label rule}
+\paragraph{Rules.} We read the official MVTec LOCO evaluation code to fix three rules. (i) Each ground-truth file is one defect channel with a defect-specific saturation: $\min(\text{threshold},\text{area})$ pixels for absolute and $\text{threshold}\times\text{area}$ for relative saturation; the channel's sPRO at a threshold is $\min(\text{TP area}/\text{saturation},1)$. (ii) A false positive is a positive pixel outside every channel of its image, and the false-positive rate pools all good and anomalous test images. (iii) The area under the mean sPRO curve is integrated up to a maximum false-positive rate and divided by it. We apply these rules to the $256{\times}256$ maps: ground-truth channels are downsampled by nearest neighbour and absolute saturation thresholds are scaled by the area ratio. Thresholds are 3{,}001 quantiles of the negative pixels between the 85th and 100th percentile plus $\pm\infty$. Only logical anomalies and good images enter.
+\paragraph{Agreement with the official evaluator.} \officialSentence
+\paragraph{Intervals.} We resample the test images (good and anomalous) with replacement, 2{,}000 times, and recompute the pooled false-positive rate and mean sPRO on each draw; all heads use the same draws, so differences are paired.
+\begin{table*}[t]
+\centering
+\caption{Native logical anomalies in every category with a retrained pair: AU-sPRO up to 5\% FPR (\%) with 95\% intervals, and image AUROC (\%).}
+\label{tab:native_full}
+\footnotesize\setlength{\tabcolsep}{3pt}
+\input{tables/native_full.tex}
+\end{table*}
+\section{Real pushpin defects at fixed operating points}
+\label{sec:supp_op}
+A compartment of a real pushpin image is a target when the union of its ground-truth channels covers at least 20 of its pixels at $256{\times}256$. The scene cutoff, threshold and list length of each head are the pooled parameters fitted on the training trays (\cref{sec:supp_defs}); nothing is fitted on real defects. \Cref{tab:native_op} reports every head and both queue policies with 95\% intervals over test images.
+\paragraph{Robustness to the operating rule.} The main paper applies the pooled training parameters (relocations and vacancies) to real defects. Refitting the scene cutoff and queue on the training relocations alone, with an independent bootstrap of 2{,}000 test-image draws, gives the same conclusion for the from-scratch footprint heads against the released top-three list: $+39.4$ [26.2, 48.7] and $+29.7$ [14.7, 43.0] points more defective compartments found, $-0.95$ [$-1.16$, $-0.74$] and $-0.56$ [$-0.82$, $-0.31$] intact compartments opened per anomalous image, and $-0.65$ and $-0.48$ compartments opened per good image (seed 1 and seed 2). On matched relocations the same heads open 0.82 and 0.46 fewer untouched compartments than the released list, a smaller margin than on real defects.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{native_examples.pdf}
+\caption{Real pushpin defects (first test image of each type; cyan: annotation). Each map is divided by its head's pixel threshold at 1\% false-positive rate on good test images (1.6k-step continuations, seed 1). For the missing pin and separator, the released and class-wide heads flag 64--76\% of non-defect pixels and the footprint head 2--11\%, each covering at least 89\% of the defect.}
+\label{fig:examples_supp}
+\end{figure}
+
+\begin{table*}[t]
+\centering
+\caption{Real pushpin defects at training-fixed operating points: recall of defective compartments, intact compartments opened per anomalous image, compartments opened per good image, and scene alarm rates.}
+\label{tab:native_op}
+\footnotesize\setlength{\tabcolsep}{4pt}
+\input{tables/native_op.tex}
+\end{table*}
+\section{Native LOCO and screw-bag analysis}
+\label{sec:supp_loco}
+The two released SALAD models of each category are used. We verified that the released models, the part-map decoder and the composition branch are used unmodified. The maps are indexed labels, mapped to six channels without RGB conversion or interpolation. The expected output is a finite $256\times256$ array in $[0,1]$. In each category the same validation map repeated exactly. The code normalizes the maximum using its normal validation mean and standard deviation. A positive affine transform preserves all rankings and the corresponding validation-order-statistic threshold. The released inputs contain 1,778 fitting, 305 normal validation and 1,568 test entries. The original benchmark paper reports 1,772, 304 and 1,568. We retain the authors' archive splits and retain the authors' published full-system results as context for the original composition-only analysis \cite{fucka2025}.
+
+\begin{table*}[t]
+\centering
+\caption{Native map scores and composition branch alarms. AUROC in percent. Pos/good counts positives and their eligible negative comparison images. Cutoffs come from normal validation only and stay fixed across scopes. Macro AUROC weights categories equally. Macro alarm counts add images. Pushpins has no eligible matched signature.}
+\label{tab:locodetail}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\input{tables/loco_full.tex}
+\end{table*}
+
+The native matched analysis uses the original component rule with an eight-connected minimum of 12 pixels, a catch-all class unseen in fitting, and both test labels plus at least five fitting maps in the signature. Each signature contributes a positive-weighted AUROC within category. The five-nearest-map baselines use blockwise standardized distances and the same training and calibration maps. Counts are per role. The part bag adds log total area and the median and range of log component areas. The grid adds fractional occupancy per role in a $4{\times}4$ grid. The pair block uses the mean coordinate offsets and the 10th, 50th and 90th percentiles of centroid distances by unordered role pair. It uses absolute coordinate offsets within a shared role. Distances are blockwise mean squared standardized differences with training-median imputation. Scale is $1.4826$ times the median absolute deviation, floored at 1.0, 0.25, 0.06 and 0.04 for counts, shapes, grid and pairs, respectively. Average the selected block distances before taking their square roots and averaging the five nearest maps. The extended pair variant uses the same counts and morphology. In the spatial block it averages the original pair distance with distances on absolute centroid position and shape. Position uses the 10th, 50th, and 90th percentiles of each coordinate by role. Extent pools log-transformed bounding spans and square roots of the two coordinate covariance eigenvalues at the same quantiles. The robust spread floors for these added blocks are 0.04 and 0.10. Defined coordinate features and fitted-median imputation follow the original procedure.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=.88\textwidth]{screw_discordant.pdf}
+\caption{Screw-bag logical cases with discordant grid and centroid-pair alarms. At the pre-specified thresholds, two of 79 supported faults alarm under the grid alone and three under the pair summary alone. The colorized maps show the five cases. Thin fragments around the bag and merged foreground illustrate the difference between predicted counts and physical screw inventory.}
+\label{fig:screw}
+\end{figure*}
+
+The matched screw-bag cohort has 79 faults and 95 good maps. Pairs trail the grid by 17.1 points [$-24.9$, $-9.0$] from unrounded scores (17.2 from rounded table entries). The other three categories average about $-0.3$ points. Adding placement and extent gives 56.6\% versus 58.3\% for the original pair block and 75.5\% for the grid. The paired difference relative to the original pair block is $-1.7$ points [$-9.9$, $+6.3$]. In \cref{fig:screw}, the predicted metal role includes narrow boundary fragments and can merge physical parts. For example, the largest projected long-axis extent in case 121 belongs to a 143-pixel fragment along the image-side edge. Per-role pooled extent therefore cannot identify the actual length of each screw. This probe supports a limit of the tested summaries on the supplied maps. In the native full comparison the grid's logical recall is 51.5\% macro with 11.1\% good alarms, versus 53.3\% and 10.3\% for the bag. Matched SALAD minus grid is $+3.0$ points [$-2.1$, $+8.2$] across the four supported categories and $+15.1$ [5.9, 24.5] in screw bag.
+\section{Appearance detectors on matched trays}
+\label{sec:supp_appearance}
+\begin{table*}[t]
+\centering
+\caption{Matched pushpin trays with the 1.6k-step continuations and the appearance detectors (re-segmented path, 138 photographs). Alarms out of 138; spread in \%; $C$ is untouched compartments queued per fault and $R$ target recall (\%) at the training-fixed threshold or list; pooled $C$ mixes relocations and vacancies; region area (\%) with faulty-tray negatives only or with source and sham compartments added. The rule needs task knowledge.}
+\label{tab:matched_v2}
+\small\setlength{\tabcolsep}{4.2pt}
+\input{tables/main.tex}
+\end{table*}
+\paragraph{EfficientAD.} SALAD's local appearance branch is an EfficientAD student--teacher--autoencoder \cite{batzner2024} with the released pushpin weights. We use the released normalization of the full-system run (\cref{sec:supp_fusion}) and compute its normalized map on every training and test edit; the map depends on RGB only, so both input paths coincide.
+\paragraph{PatchCore.} We implement PatchCore \cite{roth2022} with an ImageNet WideResNet-50-2, layer-2 and layer-3 features with $3{\times}3$ local averaging, layer-3 features upsampled to the layer-2 grid, a 1\% greedy coreset (3{,}809 patch features from the 372 official good training photographs, selected after a random projection to 128 dimensions), nearest-neighbour distances, bilinear upsampling to $256{\times}256$ and Gaussian smoothing with $\sigma=4$. Inputs are the same uncropped composites as for the other detectors. Its native logical AUROC on the official pushpin test split is 73.2\%. Of the sham trays each detector queues, the queue includes the sham's edited compartment in 120 of 121 (EfficientAD) and 123 of 123 (PatchCore).
+\section{Operating point of the full SALAD system}
+\label{sec:supp_full}
+\begin{table}[t]
+\centering
+\caption{SALAD's full system on matched pushpin trays (re-segmented path; alarms out of 138). Native: logical AUROC (\%). The validation cutoff uses SALAD's validation-based normalization with a 10\% split-conformal cutoff; the normal-test cutoff is refit on one half of the unedited test trays and applied to the other.}
+\label{tab:system}
+\small\setlength{\tabcolsep}{1.9pt}
+\input{tables/system.tex}
+\end{table}
+Full SALAD is replayed with the released weights and code (\cref{sec:supp_fusion}). SALAD normalizes each branch with statistics from the official validation split; we add a split-conformal 10\% cutoff on the 69 unedited training trays, which is our operating point and not one published with SALAD. For the normal-test cutoff we fit the same rule on the unedited sources of one fixed half of the test trays and apply it to all edits of the other half, then swap halves and add the counts. On the re-segmented path, the Gaussian branch's median normalized score is $+0.06$ on validation and $+2.73$ on unedited test trays, with the same pattern on the oracle path. The other branches shift little, and the shift is present in native good test images.
+\section{Full SALAD branches and the liquid--label rule}
 \label{sec:supp_fusion}
 \paragraph{Branch implementation.}
 The released teacher, student, RGB autoencoder, map autoencoder and map U-Net are loaded from the same released archive. The RGB branch uses the released PIL resize and ImageNet normalization and uses only RGB in its local spatial map. The composition branch uses one-hot maps and a reconstruction. The Gaussian branch pools the first 384 channels of the RGB student over the full image and over semantic regions supplied by the maps. The implementation fits Ledoit--Wolf covariances on normal training features and applies validation means and standard deviations to the per-region distances. The feature statistics are refit on native normal train and validation RGB/map pairs. The official fusion sums the normalized local and map maxima and the released global score. Composition- and RGB-map spatial outputs are kept separately. We use normal-only 10\% alarm cutoffs per tested branch and interface after applying the official normalizations. The extracted interface uses the same RGB and normalization statistics as the oracle route and substitutes maps from the independent extractor. Our 91 native logical and 138 good pushpins reproduce the published 100.0\% full-system logical AUROC. On the matched photos the local RGB branch alarms on 128 valid shams, including 119 newly alarmed from a clear source. Both edited arms retain the same cutout and paste support, so this is evidence of an appearance response to the composited valid move. Those shams are valid under the placement rule.
@@ -180,30 +317,39 @@ The two donor crops use the same vertical offset from $\{-2,0,2\}$ and the same 
 
 \paragraph{Targets and results.}
 We rank the local appearance map over upper label, lower label, cap, shoulder liquid and lower liquid. Among the 89 fault maps the upper label ranks first in 66 and has mean rank 1.33. It ranks first in 76/89 shams and 5/89 originals. With fusion as the scene gate, its training-calibrated spatial cutoff recovers it in 84/89 faults and queues 1.33 other regions per fault. Local appearance gives 28 sham and 25 fault scene alarms at its own cutoff. Fusion and global appearance each detect all 89 faults and order every fault above its sham. The exact binomial 95\% interval for an all-hit count is 95.9--100\%. The paired bootstrap intervals for the fault-minus-sham alarm gaps are 70.8--87.6 points for fusion and 76.4--91.0 for global appearance. Composition-only yields the same output pixel for pixel across all variants, so any of its four scene alarms applies equally to each state.
-
-\section{Refitted graph readout}
-The mean-aggregation comparator uses the original query-masked endpoint inputs, message encoder, donor-balanced fitting loss and learning-rate and early-stop rules. It uses mean pooling within each neighborhood and the original mean/max pooling across the endpoints. It omits explicit degree inputs and degree-scaled pooling. Its original GlaS four folds yield normal-link AUROC between 95.7\% and 98.2\% with better loss than a prevalence intercept in all four. All 280 query-bit flip checks give exact equality. The mean model can still use neighborhood content that covaries with degree or recognize an empty neighborhood.
-
-\begin{table*}[t]
+\section{Branch selection under two rules}
+\label{sec:transfer}
+\begin{figure}[t]
 \centering
-\caption{Response after refitting with mean aggregation. AUC and top-four recovery use absolute matched probability change and donor-macro aggregation. Top-four change is refit minus original in percentage points. Intervals are donor-paired. The tiers share donors.}
-\label{tab:refit}
-\small
-\input{tables/graph_mean.tex}
-\end{table*}
+\includegraphics[width=\linewidth]{branches.pdf}
+\caption{Which SALAD branch separates a fault from a valid edit? (a)~Juice edit: a same-type (valid) or other-type (fault) icon, pasted identically. (b,c)~Scenes alarmed per branch at its own 10\% normal cutoff (dashed); on pushpin composites, global RGB and fusion also alarm on most untouched sources. (d)~Juice fault-minus-sham alarm gap, 95\% intervals. Photos: MVTec LOCO AD, CC BY-NC-SA 4.0.}
+\label{fig:branches}
+\end{figure}
+SALAD fuses three branches: a local RGB appearance map, the composition map studied in the main paper, and a global RGB score that pools student features over the scene and over regions defined by the part map~\cite{fucka2025}. Our replay of the complete released system reproduces the published 100.0\% logical AUROC on 91 native logical pushpin faults and 138 normal photographs.
 
-The original and refitted networks use a query-excluded adjacency for all tokens. A changed observed bit can affect a loss through the scoring formula without moving the fitted probability. The pair MLP is an invariance control because geometry and roles stay fixed. The degree-only probe concentrates its changed features on the four target pairs by construction. It tests whether the fitted model responds to that input. Its perfect recovery and the fixed-weight clamp should be interpreted with the refit in \cref{tab:refit}. SpotTarget studies degree-sensitive bias from including and excluding target edges \cite{zhu2024spot}. Our paired construction exposes a residual input difference after exclusion.
+On the matched pushpins, however, the shams reveal a cost that this AUROC does not capture (\cref{fig:branches}b). Fusion ranks every fault above its sham but raises an alarm on 130 of 138 extracted shams and 75 of 138 sources, with 55 shams alarming although their source does not. The local RGB branch alone alarms on 128 shams and only 9 sources; since both arms contain the same compositing, it responds to the edit rather than to the rule. The composition branch alarms on 7 shams, and an explicit one-pin-per-compartment rule applied to the same extracted maps raises no sham alarm while detecting every fault.
 
-\clearpage
-\section{Graph experiments, diagnostics and native LOCO}
-The remaining sections describe the graph switch experiments, additional diagnostics of the released composition branch, the native LOCO analysis and an exploratory cardiac query. These are secondary or exploratory analyses with their own protocols.
+A second rule shows that the informative branch depends on the rule. MVTec LOCO requires the icon on the upper label of a juice bottle to match its liquid~\cite{bergmann2022}. We retain 89 of 94 eligible normal test bottles and paste intact icons from a disjoint bank of training photographs into the same label region (\cref{fig:branches}a); an icon of the same type yields a valid sham and an icon of another type a fault. Both use the same offset, blending and footprint, and their mean blended RGB changes differ by at most half a grey level. Since the liquid, the bottle and the part map are unchanged, the composition branch returns identical maps for all three variants. The global RGB branch ranks all 89 faults above their shams and alarms on every fault but only 14 shams, a fault-minus-sham alarm gap of $+84.3$ points [76.4, 91.0] (\cref{fig:branches}d), slightly above that of fusion ($+79.8$ [70.8, 87.6]). The local RGB branch ranks the upper label first among five bottle regions for 74.2\% of faults but also for 85.4\% of shams, and alarms on 25 faults and 28 shams. The two rules therefore favour different branches: composition evidence decides placement in a tray, whereas global appearance captures a label--liquid correspondence that the part map cannot express.
+\section{Response evidence in part graphs}
+\label{sec:graph}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{graph_audit.pdf}
+\caption{A masked GNN responds to switched links through node degree (78 GlaS fields, 12 donors). (a)~Edited-graph AUROC; local spacing adds 15.3 points to typed distance. (b)~AUROC of the change between matched graphs; hollow: 50 by construction. (c)~Top-four recovery of the masked GNN as fitted, with degree inputs fixed, and refit with mean aggregation. Donor-paired 95\% intervals.}
+\label{fig:graph}
+\end{figure}
+The matched design also applies to graphs of parts. We build gland graphs from GlaS histology images~\cite{glas2017} and cardiac structure graphs from HVSMR-2.0~\cite{pace2024}, and apply \emph{degree-preserving switches} that remove two links and add two others so that every node keeps its degree. Readouts are evaluated by how well they rank the four switched pairs. On GlaS, adding local gland spacing to typed centroid distance improves the edited-graph AUROC by 15.3 points [10.9, 20.1], and the gain persists for additional length-matched switches and under joint matching of raw and local distances ($+16.8$ [11.3, 23.0]); these tiers reuse donors and involve no pathological labels.
+
+For a candidate link $e=(u,v)$ between nodes $u$ and $v$, let $z_e$ be the predicted logit and $a_e\in\{0,1\}$ the observed link state. For a link predictor, the Bernoulli loss $\operatorname{softplus}(z_e)-a_ez_e$ changes with $a_e$ even when the evidence $z_e$ is fixed. A pair MLP observes only geometry and roles, so its probability cannot change and it ranks by response at chance level (\cref{fig:graph}b). A query-masked neighbourhood model has an additional route: removing the queried link before computing the degree $d_u$ of an endpoint yields $d_u-a_e$, so a switch changes the masked degree at the four target pairs although both graphs share the same degree sequence, an effect related to the target-link exclusion studied in~\cite{zhu2024spot}. Ranked by absolute change in probability, the masked GNN recovers 87.5\% of the switched pairs among its top four (\cref{fig:graph}c). Holding its degree inputs fixed reduces this to 33.7\%, and refitting with mean neighbourhood aggregation and no degree inputs on the same four GlaS folds, which reaches 95.7--98.2\% training AUROC on normal links, reduces it to 46.6\%, 40.9 points lower [32.8, 49.8]. Since mean aggregation still admits indirect cues such as an empty neighbourhood, both interventions indicate a degree pathway, and recovery of known graph edits should not be interpreted as evidence of validity.
+\section{Graph experiments: scope and estimands}
+\label{sec:supp_graphscope}
+The following sections give the construction, scorers and controls of the graph experiments in \cref{sec:graph}, which are secondary to the pushpin analyses.
 
 \subsection{Analysis scope}
 We fixed the GlaS and HVSMR graph folds and the MVTec LOCO partitions before fitting the readouts. The graph protocol froze the graph contrast, support rules, controls, and useful effect sizes before evaluating the new test scores. The pre-specified graph contrast was edited-state loss AUROC minus absolute probability-change AUROC, with a useful positive gap of at least ten points. The measured contrast reverses that direction. A fixed-model degree intervention was prompted by the test outcome and is exploratory. The visual test and the collateral response distribution use all eligible sources. The common-cell comparison of fault, sham, and deletion was a follow-up to the paired spatial output. The screw-bag extent and the native cardiac term probes are secondary follow-ups.
 
 \paragraph{Paired estimands.}
 All graph metrics compare four switch targets with the other pairs within the same graph. The fraction affected and magnitude summaries are computed separately on all targets, added edges, removed edges and untouched pairs. The two-hypothesis AUROC uses half credit for ties. Top-four recall uses fractional allocation to a tied boundary score. Within a source we first average its edits. Within a donor we then average its sources. Donors have equal aggregate weight. The paired bootstrap uses common draw indices across methods and metrics. For image edits, one original photograph and all its variants move together in resampling. Intervals condition on the fitted models and validation cutoffs.
-
 \section{Graph construction and matching}
 GlaS provides 165 gland instance masks from 16 donors. We use the original Warwick-QU challenge data, the supplied donor IDs and $0.620\,\mu$m pixel spacing \cite{glas2017}. Graph adjacency is the undirected union of each gland's two closest annotated boundaries. The sensitivity construction takes the undirected union of its two closest centroids. For HVSMR-2.0 we use the cropped, intensity-normalized volumes in patient coordinates. Each nonempty structure defines one typed node. Face contact of at least $5\,\mathrm{mm}^2$ defines a link \cite{pace2024}. Part features include log area or volume, elongation, compactness and channel intensity moments.
 
@@ -229,7 +375,6 @@ Place four same-role parts at consecutive vertices of a unit square and two more
 \setlength{\tabcolsep}{3.5pt}
 \input{tables/graph_main.tex}
 \end{table*}
-
 \section{Graph scorers and readout controls}
 \paragraph{Fitting.}
 Four test folds use the original donor allocation. For each family and fold we order the fitting donors pseudo-randomly and take the first quarter, with a minimum of two, for training. The rest fit the two learned link models. Both use donor-balanced BCE, with the per-pair weight inversely proportional to the donor's field count and that field's candidate count. AdamW uses weight decay $0.002$ and batch size 512. Rates $0.002$ and $0.0007$ are compared using the smallest weighted training loss. We train up to 80 epochs with patience 12 and initial seeds 904--907. For GlaS there are nine fit and three training donors per fold. For HVSMR there are 34 and 11. Frozen logistic comparators retain all outer fitting donors and use the original $0.015$ regularization and feature scales.
@@ -267,55 +412,20 @@ Write the original neighborhood vector as the mean message times $\tilde d_i/\sq
 
 \paragraph{Motion check.}
 A separate perturbation moved one centroid by one median nearest-neighbor spacing while preserving adjacency and all part pixels. Geometry scored 46.8\% target AUROC on 140 GlaS fields from 16 donors and 68.9\% on 60 cardiac scans. Their paired directional wins were 51.2\% and 71.7\%, respectively. This intervention answers a different question from an edge switch and can make some configurations more typical.
-
-\section{Photograph interventions and extractor}
-\label{sec:supp_photo}
-We use the official MVTec LOCO photographs and fix the 372 good training, 69 good validation and 138 good test photographs before any experiment. The training photographs are split pseudo-randomly into 302 for fitting and 70 held out for model selection, and the test photographs into two fixed halves of 63 and 75. No test score or activation enters candidate selection. The authors' released maps determine the five-column, three-row tray geometry. On the 256-square grid we use $x=(8,57,105,153,201,249)$ and $y=(13,91,166,241)$. Retained pin labels are eight-connected class-2 components of at least 75 pixels. A qualifying source has one per cell. This filter is specific to the compartment experiment.
-
-The RGB cutout is the pin-class component with the neighboring bright pixels from a two-pixel halo, with enclosed holes filled. Selection requires cell clearance and an available local dark background. We fill the original position with the per-channel median of the local dark class-4 ring. Destinations have a one-pixel cell margin, zero overlap with the source cutout or other pins, and at least a two-pixel pin clearance. The oracle component moves entirely onto class 4. The two translations have the same integer squared displacement and equal paste area. The displacement range and intensity thresholds were fixed on validation photographs. In test the moves range from 19.2 to 51.4 pixels. All 138 candidate images meet the edit rules. Sham and fault change exactly the same number of decoded RGB pixels in each pair. Source-pixel repaint is exact. All test masks retain the same class histogram for source, sham and fault. Each move preserves the pin-class component count. All four RGB arms use original camera backgrounds. The held-out scenes contain no generated textures or objects.
-
-The RGB-only extractor is a two-level U-Net with widths 16, 32 and 64, SiLU, group normalization, max pooling and nearest-neighbor upsampling. It predicts six channels. The training label is the released map for each train/good photograph. Weighting is inverse square-root class frequency with floor 0.01. AdamW runs with seed 74817, learning rate $0.001$, decay $0.001$, batch size 12, and at most 30 epochs, selecting the lowest weighted loss on the 70 held-out images. The selected epoch is 30. Training pin IoU is 97.3\% against the released labels and all 70 training images have the correct retained cell counts. On held-out fault maps, pin IoU against the intervened oracle maps is 97.2\%. We keep extraction discrepancies in the test denominator. The extracted arm has its own validation cutoff. Its comparison with the oracle arm includes the effect of re-segmentation and recalibration.
-
-
-\paragraph{Reference regions and scene operation.}
-The two affected compartments are a rule-based coarse spatial reference. The vacant and occupied compartments need no pixel-level anomaly outline. For each cell we take the maximum of either the edited output or the absolute change from source. Even the change-based cell rank is 98.4\% on oracle maps while 90.3\% of untouched cells have a large absolute change. The matched deletion, which leaves the same vacancy, keeps changes above $0.5$ to 2.9\% of those same untouched cells. The paired difference is 87.4 points [82.4, 91.9] for oracle maps and 86.6 [81.4, 91.2] after extraction. The full threshold curve is Fig.~4 of the main paper. These are changes in the spatial output, whereas scene-level maxima and cutoff decisions are a separate measurement.
-
-The image score is the official maximum sigmoid output. The validation IQRs are 0.00974 (oracle) and 0.01060 (extracted). The raw cutoffs are 0.15802 and 0.17097. The rule comparator sums the absolute deviation from one pin per compartment and adds retained out-of-grid pins. Its cutoff is zero on both paths. The comparator uses the same labels and the same validation rule. On re-extracted maps it yields zero sham alarms (exact 95\% upper bound 2.6\%), while retaining all 138 fault alarms. \Cref{tab:halves} reports the held-out halves and the paired effect. Figure selection uses the case closest to the median oracle fault-minus-sham score. There were zero missed faults. The second row uses the first hash-ordered alarmed sham, whose source also alarms.
+\section{Refitted graph readout}
+The mean-aggregation comparator uses the original query-masked endpoint inputs, message encoder, donor-balanced fitting loss and learning-rate and early-stop rules. It uses mean pooling within each neighborhood and the original mean/max pooling across the endpoints. It omits explicit degree inputs and degree-scaled pooling. Its original GlaS four folds yield normal-link AUROC between 95.7\% and 98.2\% with better loss than a prevalence intercept in all four. All 280 query-bit flip checks give exact equality. The mean model can still use neighborhood content that covaries with degree or recognize an empty neighborhood.
 
 \begin{table*}[t]
 \centering
-\caption{Fixed photo halves for the matched photo edits. Sham, Fault and Del. count alarms. All fault and deletion recalls are 100\% on the respective support. Bootstrap intervals for tied all-success contrasts are conditional on the sample.}
-\label{tab:halves}
-\scriptsize
-\setlength{\tabcolsep}{3.3pt}
-\input{tables/visual_halves.tex}
+\caption{Response after refitting with mean aggregation. AUC and top-four recovery use absolute matched probability change and donor-macro aggregation. Top-four change is refit minus original in percentage points. Intervals are donor-paired. The tiers share donors.}
+\label{tab:refit}
+\small
+\input{tables/graph_mean.tex}
 \end{table*}
 
-\section{Native LOCO and screw-bag analysis}
-The two released SALAD models of each category are used. We verified that the released models, the part-map decoder and the composition branch are used unmodified. The maps are indexed labels, mapped to six channels without RGB conversion or interpolation. The expected output is a finite $256\times256$ array in $[0,1]$. In each category the same validation map repeated exactly. The code normalizes the maximum using its normal validation mean and standard deviation. A positive affine transform preserves all rankings and the corresponding validation-order-statistic threshold. The released inputs contain 1,778 fitting, 305 normal validation and 1,568 test entries. The original benchmark paper reports 1,772, 304 and 1,568. We retain the authors' archive splits and retain the authors' published full-system results as context for the original composition-only analysis \cite{fucka2025}.
-
-\begin{table*}[t]
-\centering
-\caption{Native map scores and composition branch alarms. AUROC in percent. Pos/good counts positives and their eligible negative comparison images. Cutoffs come from normal validation only and stay fixed across scopes. Macro AUROC weights categories equally. Macro alarm counts add images. Pushpins has no eligible matched signature.}
-\label{tab:locodetail}
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\input{tables/loco_full.tex}
-\end{table*}
-
-The native matched analysis uses the original component rule with an eight-connected minimum of 12 pixels, a catch-all class unseen in fitting, and both test labels plus at least five fitting maps in the signature. Each signature contributes a positive-weighted AUROC within category. The five-nearest-map baselines use blockwise standardized distances and the same training and calibration maps. Counts are per role. The part bag adds log total area and the median and range of log component areas. The grid adds fractional occupancy per role in a $4{\times}4$ grid. The pair block uses the mean coordinate offsets and the 10th, 50th and 90th percentiles of centroid distances by unordered role pair. It uses absolute coordinate offsets within a shared role. Distances are blockwise mean squared standardized differences with training-median imputation. Scale is $1.4826$ times the median absolute deviation, floored at 1.0, 0.25, 0.06 and 0.04 for counts, shapes, grid and pairs, respectively. Average the selected block distances before taking their square roots and averaging the five nearest maps. The extended pair variant uses the same counts and morphology. In the spatial block it averages the original pair distance with distances on absolute centroid position and shape. Position uses the 10th, 50th, and 90th percentiles of each coordinate by role. Extent pools log-transformed bounding spans and square roots of the two coordinate covariance eigenvalues at the same quantiles. The robust spread floors for these added blocks are 0.04 and 0.10. Defined coordinate features and fitted-median imputation follow the original procedure.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=.88\textwidth]{screw_discordant.pdf}
-\caption{Screw-bag logical cases with discordant grid and centroid-pair alarms. At the pre-specified thresholds, two of 79 supported faults alarm under the grid alone and three under the pair summary alone. The colorized maps show the five cases. Thin fragments around the bag and merged foreground illustrate the difference between predicted counts and physical screw inventory.}
-\label{fig:screw}
-\end{figure*}
-
-The matched screw-bag cohort has 79 faults and 95 good maps. Pairs trail the grid by 17.1 points [$-24.9$, $-9.0$] from unrounded scores (17.2 from rounded table entries). The other three categories average about $-0.3$ points. Adding placement and extent gives 56.6\% versus 58.3\% for the original pair block and 75.5\% for the grid. The paired difference relative to the original pair block is $-1.7$ points [$-9.9$, $+6.3$]. In \cref{fig:screw}, the predicted metal role includes narrow boundary fragments and can merge physical parts. For example, the largest projected long-axis extent in case 121 belongs to a 143-pixel fragment along the image-side edge. Per-role pooled extent therefore cannot identify the actual length of each screw. This probe supports a limit of the tested summaries on the supplied maps. In the native full comparison the grid's logical recall is 51.5\% macro with 11.1\% good alarms, versus 53.3\% and 10.3\% for the bag. Matched SALAD minus grid is $+3.0$ points [$-2.1$, $+8.2$] across the four supported categories and $+15.1$ [5.9, 24.5] in screw bag.
-
-\section{Exploratory SVC--PA query}
+The original and refitted networks use a query-excluded adjacency for all tokens. A changed observed bit can affect a loss through the scoring formula without moving the fitted probability. The pair MLP is an invariance control because geometry and roles stay fixed. The degree-only probe concentrates its changed features on the four target pairs by construction. It tests whether the fitted model responds to that input. Its perfect recovery and the fixed-weight clamp should be interpreted with the refit in \cref{tab:refit}. SpotTarget studies degree-sensitive bias from including and excluding target edges \cite{zhu2024spot}. Our paired construction exposes a residual input difference after exclusion.
+\section{Exploratory cardiac query}
+\label{sec:supp_svc}
 The code comparison keeps five negative fit patients, 20 negative calibration patients, and test patients with 24 Glenn codes and ten without. Mask face contact has 100\% test AUROC, detects 24/24 positives [85.8, 100], and alarms on 1/10 code-negative scans [0.25, 44.5]. The $31.47\,\mathrm{mm}^2$ calibration threshold is below the largest negative ($48.45$) and smallest positive ($58.17$). Axial-mask profiles detect 21/24 with zero negative alarms. Full contextual loss has 19.6\% AUROC and detects 0/24 at its cutoff. Its masked link probability is higher on the Glenn-coded test scans (median 0.712 versus 0.441). Refitting without the degree terms raises AUROC to 44.2\%. Removing the shared-neighbor terms gives 18.3\%. Distance alone gives 75.4\%. Removing one incident link at a time while holding the SVC--PA bit fixed yields mean absolute within-patient probability shifts of 0.093 on the 21 Glenn-coded patients with at least one such link and 0.144 on ten code-negative patients. These are exploratory sensitivity checks on five fit patients and a single query. They do not resolve the causal effects of surgery. Five target-negative SVC variants occur in the release, with two in fit and three in calibration. The test has zero. Independent adjudication of native relations and benign variants is needed to extend the scope beyond this code.
-
 \section{Data use}
 The medical experiments use existing de-identified research releases and their original labels, and constitute a secondary analysis without new ethics review, participant recruitment, intervention or consent collection. The HVSMR authors report approval by the Boston Children's Hospital IRB with a waiver of written consent~\cite{pace2024}. The photographs derive from the public MVTec LOCO AD dataset, distributed under CC BY-NC-SA 4.0, and derived image panels retain this attribution and license. Selected pairs, data splits, scores, calibration sets, checkpoint hashes and figure inputs are released with the code.
